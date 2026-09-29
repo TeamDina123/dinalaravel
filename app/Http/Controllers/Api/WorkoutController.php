@@ -178,6 +178,63 @@ class WorkoutController extends Controller
         return !ProgramPhaseWorkout::where('workout_id',$id)->exists();
     }
 
+    public function duplicateWorkout(Request $request)
+    {
+        $validate = Validator::make($request->all(), [
+            'id' => 'required|numeric|exists:workouts,id',
+            'title' => 'nullable|string|max:255',
+        ]);
+        if ($validate->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validate->errors()->all()[0],
+            ]);
+        }
+
+        $workout = Workout::with(['workoutExercises' => function ($query) {
+            $query->orderByRaw('COALESCE(group_order, id) asc')
+                ->orderBy('id', 'asc');
+        }])->find($request->id);
+
+        if (is_null($workout)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Workout Not Found',
+            ]);
+        }
+
+        $newWorkout = null;
+        try {
+            DB::transaction(function () use ($request, $workout, &$newWorkout) {
+                $newWorkout = $workout->replicate();
+                $newWorkout->title = trim((string) $request->input('title', '')) ?: $workout->title . ' (Copy)';
+                $newWorkout->content_code = null;
+                $newWorkout->user_id = Auth::id();
+                $newWorkout->save();
+
+                foreach ($workout->workoutExercises as $workoutExercise) {
+                    $newWorkoutExercise = $workoutExercise->replicate();
+                    $newWorkoutExercise->workout_id = $newWorkout->id;
+                    $newWorkoutExercise->save();
+                }
+            });
+        } catch (Exception $er) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something Went Wrong.',
+                'error' => $er->getMessage().'----'.$er->getFile().'----'.$er->getLine(),
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Workout duplicated successfully.',
+            'data' => [
+                'id' => $newWorkout->id,
+            ],
+        ]);
+    }
+
     public function updateWorkout(Request $request){
         $workout = Workout::find($request->id);
         if(is_null($workout))

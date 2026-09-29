@@ -14,7 +14,8 @@ class ProgramPhaseWorkoutFactory extends Factory
         return [
             'program_phase_id' => \App\Models\ProgramPhase::factory(),
             'workout_id' => \App\Models\Workout::factory(),
-            'order' => $this->faker->numberBetween(1, 10),
+            'display_name' => $this->faker->words(3, true),
+            'sort_order' => $this->faker->numberBetween(0, 10),
         ];
     }
 }

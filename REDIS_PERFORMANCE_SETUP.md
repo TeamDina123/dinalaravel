@@ -9,6 +9,7 @@ Set these values on the server:
 ```env
 CACHE_DRIVER=redis
 QUEUE_CONNECTION=redis
+QUEUE_RETRY_AFTER=960
 SESSION_DRIVER=redis
 SESSION_CONNECTION=default
 REDIS_CLIENT=phpredis
@@ -40,7 +41,7 @@ php artisan view:cache
 Run a queue worker in production:
 
 ```bash
-php artisan queue:work redis --queue=default --sleep=1 --tries=3 --timeout=120
+php artisan queue:work redis --queue=ai-tags,default --sleep=1 --tries=1 --timeout=900
 ```
 
 Use Supervisor or systemd so the worker stays up.

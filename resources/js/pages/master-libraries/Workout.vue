@@ -56,6 +56,7 @@
                                 <p class="mb-0 small-text" v-if="item.language=='en'">English</p>
                                 <p class="mb-0 small-text" v-else-if="item.language=='ar'">Arabic</p>
                                 <p class="mb-0 small-text" v-else >No Audio</p>
+                                <button class="scnd_btn duplicate-btn mt-2" type="button" @click.stop="duplicateWorkout(item)">Duplicate</button>
                             </div>
                         </div>
                     </div>
@@ -290,6 +291,44 @@ export default {
                 console.log("Error deleting workout: ", er.error);
             });
         },
+        duplicateWorkout(workout) {
+            const title = window.prompt('Name for duplicated workout', `${workout.title} (Copy)`);
+            if (title === null) {
+                return;
+            }
+            const trimmedTitle = title.trim();
+            if (trimmedTitle === '') {
+                this.modalTitle = 'Error!';
+                this.modalDetail = 'Workout name is required';
+                this.informModal = true;
+                return;
+            }
+
+            this.pageLoading = true;
+            this.loaderText = 'Duplicating';
+            axios.post(config.baseApiUrl + 'duplicate-workout', {
+                id: workout.id,
+                title: trimmedTitle
+            }, this.apiConfig).then(res => {
+                this.pageLoading = false;
+                if (res.data.status) {
+                    this.modalTitle = 'Done!';
+                    this.modalDetail = res.data.message;
+                    this.informModal = true;
+                    this.getAllWorkouts();
+                }
+                else {
+                    this.modalTitle = 'Error!';
+                    this.modalDetail = res.data.message;
+                    this.informModal = true;
+                }
+            }).catch(er => {
+                this.pageLoading = false;
+                this.modalTitle = 'Failed!';
+                this.modalDetail = er.message || 'Something went wrong';
+                this.informModal = true;
+            });
+        },
         acknowledged() {
             this.informModal = false;
         },
@@ -356,6 +395,11 @@ export default {
 
 .small-text {
     font-size: 12px;
+}
+
+.duplicate-btn {
+    font-size: 12px;
+    padding: 4px 10px;
 }
 
 .filterBtn {

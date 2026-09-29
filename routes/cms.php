@@ -84,6 +84,7 @@ Route::group(['prefix' => 'cms'], function(){
 		Route::post('create-workout', [WorkoutController::class,'createWorkout']);
 		Route::get('editable-workout/{id}', [WorkoutController::class,'canEditWorkout']);
 		Route::post('update-workout', [WorkoutController::class,'updateWorkout']);
+		Route::post('duplicate-workout', [WorkoutController::class,'duplicateWorkout']);
 		Route::post('create-workout-exercise', [WorkoutController::class,'createWorkoutExercise']);
 		Route::get('get-all-workouts', [WorkoutController::class,'getAllWorkouts']);
         Route::get('delete-workout/{id}', [WorkoutController::class,'deleteWorkout']);
