@@ -17,6 +17,7 @@
                     <div class="w-100 wrk_name mt-2">
                         <input v-model="contentCode" type="text" placeholder="Content code (optional, e.g. WR-023)">
                     </div>
+                    <WorkoutCoverImage v-model="coverImage" class="mt-3" />
                     <!-- <div class="text-center mt-2">
                         <p class="text-muted">Type of Workout</p>
                         <select v-model="type">
@@ -58,8 +59,10 @@ import config from '../../config';
 import Loader from '../../components/loader.vue';
 import Inform from '../../components/inform.vue';
 import assignTags from '../clients/assignTags.vue';
+import WorkoutCoverImage from './WorkoutCoverImage.vue';
+import { workoutRequestData } from '../../utils/workoutRequestData';
 export default {
-    components: { Loader, Inform, assignTags },
+    components: { Loader, Inform, assignTags, WorkoutCoverImage },
     data() {
         return {
             apiConfig: {
@@ -69,6 +72,7 @@ export default {
             },
             name: null,
             contentCode: '',
+            coverImage: null,
             type: 'regular',
             language: 'en',
             nameError: false,
@@ -107,13 +111,13 @@ export default {
                 this.typeError = true;
                 return;
             }
-            const postData = {
+            const postData = workoutRequestData({
                 'title': this.name,
                 'type': this.type,
                 'language': this.language,
                 'tags': this.tags,
                 'content_code': (this.contentCode || '').trim(),
-            }
+            }, this.coverImage);
             this.pageLoading = true;
             axios.post(config.baseApiUrl + 'create-workout', postData, this.apiConfig).then(res => {
                 this.pageLoading = false;
@@ -122,14 +126,14 @@ export default {
                 }
                 else {
                     this.modalTitle = 'Error!';
-                    this.modalDetail = "Creating workout error";
+                    this.modalDetail = res.data.message || "Creating workout error";
                     this.informModal = true;
                     console.log("Creating workout error", res.data.message);
                 }
             }).catch(er => {
                 this.pageLoading = false;
                 this.modalTitle = 'Error!';
-                this.modalDetail = "Creating workout error";
+                this.modalDetail = er.response?.data?.message || "Creating workout error";
                 this.informModal = true;
                 console.log("Creating workout error", er);
             });

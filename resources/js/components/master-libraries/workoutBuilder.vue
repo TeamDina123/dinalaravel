@@ -36,6 +36,7 @@
             </div>
             <div class="row mt-4">
                 <div class="col-xl-6 exercises">
+                    <WorkoutCoverImage v-model="coverImage" :existing-image="workout.image || ''" class="mb-3" />
                     <div class="instruc">
                         <h2><strong>INSTRUCTIONS</strong></h2>
                         <textarea @change="this.instructionError=false" v-model="instructions" class="w-100" rows="3" placeholder="say something about this workout"></textarea>
@@ -301,9 +302,11 @@ import Confirm from "../../components/confirm.vue";
 import Filters from '../../components/filters.vue';
 import WorkoutBuilderLibrary from './WorkoutBuilderLibrary.vue';
 import RoutineSectionTagModal from './RoutineSectionTagModal.vue';
+import WorkoutCoverImage from './WorkoutCoverImage.vue';
+import { workoutRequestData } from '../../utils/workoutRequestData';
 import { flattenWorkoutExercises, buildRoutineGroup } from '../../utils/workoutRoutineHelpers';
 export default {
-    components: { Filters, Loader, Inform, Confirm, WorkoutBuilderLibrary, RoutineSectionTagModal },
+    components: { Filters, Loader, Inform, Confirm, WorkoutBuilderLibrary, RoutineSectionTagModal, WorkoutCoverImage },
     props: ["workout"],
     data() {
         return {
@@ -319,6 +322,7 @@ export default {
             filteredExercisesArray: [],
             visibleExercisesArray: [],
             addedExs: [],
+            coverImage: null,
             rounds: 1,
             loading: false,
             loadingText: 'Loading',
@@ -696,7 +700,7 @@ export default {
                 order : this.addedExs.length
             };
             this.addedExs.push(tempData);
-            this.supCirBtns();
+            this.catBtnsVisib();
         },
         removeFromWorkout() {
             this.selectedExs = this.selectedExs.sort();
@@ -736,7 +740,7 @@ export default {
                 }
                 this.addedExs[0].items.push(tempData.item)
             }
-            this.supCirBtns();
+            this.catBtnsVisib();
         },
         validate() {
             let restCheck = false;
@@ -809,11 +813,11 @@ export default {
             this.upload();
         },
         upload(){
-            const postData = {
+            const postData = workoutRequestData({
                 workout_id: this.workout.id,
                 instructions: this.instructions,
                 data: this.addedExs,
-            };
+            }, this.coverImage);
             this.loadingText = 'Uploading';
             this.loading = true;
             axios.post(config.baseApiUrl + "create-workout-exercise", postData, this.apiConfig)

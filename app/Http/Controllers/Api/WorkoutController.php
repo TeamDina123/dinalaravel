@@ -24,7 +24,33 @@ use stdClass;
 
 class WorkoutController extends Controller
 {
+    private const COVER_IMAGE_RULES = 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120';
+
+    private function decodeUploadArrays(Request $request, array $fields): void
+    {
+        foreach ($fields as $field) {
+            if (is_string($request->input($field))) {
+                $decoded = json_decode($request->input($field), true);
+                if (is_array($decoded)) {
+                    $request->merge([$field => $decoded]);
+                }
+            }
+        }
+    }
+
+    private function storeCoverImage(Request $request): string
+    {
+        // Workout images already use the exercises media folder and URL accessor.
+        $path = $request->file('cover_image')->store('exercises', 'fwd_media');
+        if (! $path) {
+            throw new \RuntimeException('Could not save the workout cover image.');
+        }
+
+        return basename($path);
+    }
+
     public function createWorkout(Request $request){
+        $this->decodeUploadArrays($request, ['tags']);
         $request->merge([
             'content_code' => ContentCodeNormalizer::normalize($request->input('content_code')),
         ]);
@@ -33,6 +59,7 @@ class WorkoutController extends Controller
 			'type' => 'required|in:regular,circuit,interval',
             'language' => 'required|in:ar,en,no',
             'tags' => 'array',
+            'cover_image' => self::COVER_IMAGE_RULES,
             'content_code' => [
                 'nullable',
                 'string',
@@ -59,6 +86,9 @@ class WorkoutController extends Controller
         $data->category = 'master';
         $data->user_id = Auth::id();
         $data->content_code = $request->input('content_code');
+        if ($request->hasFile('cover_image')) {
+            $data->image = $this->storeCoverImage($request);
+        }
 		$data->save();
 
         if(is_null($data->tags))
@@ -76,9 +106,11 @@ class WorkoutController extends Controller
     }
 
     public function createWorkoutExercise(Request $request){
+        $this->decodeUploadArrays($request, ['data']);
         $validate = Validator::make($request->all(),[
             'workout_id' => 'required|numeric',
 			'data' => 'required|array',
+            'cover_image' => self::COVER_IMAGE_RULES,
 		]);
 		if($validate->fails()){
 			return response()->json([
@@ -122,7 +154,11 @@ class WorkoutController extends Controller
         } else {
             $loc = $request->data[0]['items'][0]['exercise_id'];
         }
-        $workout->image = DB::table('exercises')->where('id',$loc)->pluck('image')->first();
+        if ($request->hasFile('cover_image')) {
+            $workout->image = $this->storeCoverImage($request);
+        } elseif (empty($workout->getRawOriginal('image'))) {
+            $workout->image = DB::table('exercises')->where('id',$loc)->pluck('image')->first();
+        }
         $workout->update();
 
         foreach($request->data as $blockOrder => $item){
@@ -236,6 +272,18 @@ class WorkoutController extends Controller
     }
 
     public function updateWorkout(Request $request){
+        $this->decodeUploadArrays($request, ['tags', 'exs']);
+        $validate = Validator::make($request->all(), [
+            'cover_image' => self::COVER_IMAGE_RULES,
+            'tags' => 'nullable|array',
+            'exs' => 'present|array',
+        ]);
+        if ($validate->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validate->errors()->first(),
+            ]);
+        }
         $workout = Workout::find($request->id);
         if(is_null($workout))
         return response()->json([
@@ -272,6 +320,9 @@ class WorkoutController extends Controller
                 ]);
             }
             $workout->content_code = $request->input('content_code');
+        }
+        if ($request->hasFile('cover_image')) {
+            $workout->image = $this->storeCoverImage($request);
         }
         $workout->update();
 

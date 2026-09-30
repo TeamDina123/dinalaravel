@@ -73,3 +73,12 @@ node_modules
 /storage/AuthKey_*.p8
 /storage/app/ai-training/*.jsonl
 /storage/app/ai-training/*-manifest.json
+
+# Keep the focused workout cover regression test in version control.
+!/tests/
+/tests/*
+!/tests/Feature/
+/tests/Feature/*
+!/tests/Feature/Workouts/
+/tests/Feature/Workouts/*
+!/tests/Feature/Workouts/WorkoutCoverImageTest.php

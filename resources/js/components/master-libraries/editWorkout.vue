@@ -44,6 +44,7 @@
             </div>
             <div class="row mt-4">
                 <div class="col-xl-6 exercises">
+                    <WorkoutCoverImage v-model="coverImage" :existing-image="workoutDetail.image || ''" class="mb-3" />
                     <div class="instruc">
                         <h2><strong>INSTRUCTIONS</strong></h2>
                         <textarea @change="this.instructionError=false" v-model="workoutDetail.instructions" class="w-100" rows="3" placeholder="say something about this workout"></textarea>
@@ -239,9 +240,11 @@ import AssignTags from '../clients/assignTags.vue';
 import editExer from '../../components/master-libraries/editExercise.vue';
 import WorkoutBuilderLibrary from './WorkoutBuilderLibrary.vue';
 import RoutineSectionTagModal from './RoutineSectionTagModal.vue';
+import WorkoutCoverImage from './WorkoutCoverImage.vue';
+import { workoutRequestData } from '../../utils/workoutRequestData';
 import { flattenWorkoutExercises, buildRoutineGroup } from '../../utils/workoutRoutineHelpers';
 export default {
-    components: { Filters, Loader, Inform, Confirm, AssignTags, editExer, WorkoutBuilderLibrary, RoutineSectionTagModal },
+    components: { Filters, Loader, Inform, Confirm, AssignTags, editExer, WorkoutBuilderLibrary, RoutineSectionTagModal, WorkoutCoverImage },
     props: ["workout"],
     data() {
         return {
@@ -256,6 +259,7 @@ export default {
             },
             exercises: [],
             workoutDetail : JSON.parse(JSON.stringify(this.workout)),
+            coverImage: null,
             filteredExercisesArray: [],
             visibleExercisesArray: [],
             rounds: 1,
@@ -782,7 +786,15 @@ export default {
             this.upload();
         },
         upload(){
-            const postData = this.workoutDetail;
+            const postData = workoutRequestData({
+                id: this.workoutDetail.id,
+                title: this.workoutDetail.title,
+                content_code: this.workoutDetail.content_code,
+                language: this.workoutDetail.language,
+                instructions: this.workoutDetail.instructions,
+                tags: this.workoutDetail.tags || [],
+                exs: this.workoutDetail.exs,
+            }, this.coverImage);
             this.loadingText = 'Uploading';
             this.loading = true;
             axios.post(config.baseApiUrl + "update-workout", postData, this.apiConfig)
