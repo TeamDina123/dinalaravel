@@ -25,22 +25,24 @@
             </button>
         </div>
 
-        <div class="d-flex justify-content-between gray_bg p-3">
-            <div class="position-relative w-100">
+        <div class="library-search-toolbar gray_bg p-3">
+            <div class="library-search-field">
                 <input
                     @input="onSearchInput"
+                    @keydown.enter.prevent="onSearchInput"
                     type="text"
                     class="w-100 exSearch"
                     :placeholder="libraryTab === 'exercises' ? 'Search for an Exercise' : 'Search workout routines'"
                     v-model="localSearch"
+                    :aria-label="libraryTab === 'exercises' ? 'Search exercises' : 'Search workout routines'"
                 >
-                <img src="/cms-assets/images/navbar-topbar/search.png" alt="search-icon" class="img-fluid position-absolute">
-            </div>
-            <div>
-                <button class="trans_btn py-1 ps-3" @click="openFilters">
-                    <img src="/cms-assets/images/master-libraries/filter.png" alt="" class="img-fluid">
+                <button type="button" class="library-search-button trans_btn" aria-label="Search library" @click="onSearchInput">
+                    <img src="/cms-assets/images/navbar-topbar/search.png" alt="">
                 </button>
             </div>
+            <button type="button" class="library-filter-button trans_btn" aria-label="Filter library" @click="openFilters">
+                <img src="/cms-assets/images/master-libraries/filter.png" alt="">
+            </button>
         </div>
 
         <p v-if="libraryTab === 'routines' && selectedRoutineTags.length" class="h8 text-muted px-3 mb-0">
@@ -188,7 +190,10 @@ export default {
             }
             return String(language || '').toUpperCase();
         },
-        onSearchInput() {
+        onSearchInput(event = null) {
+            if (event && event.target && typeof event.target.value === 'string') {
+                this.localSearch = event.target.value;
+            }
             this.$emit('update:search', this.localSearch);
             if (this.libraryTab === 'routines') {
                 this.applyRoutineSearch();
@@ -242,6 +247,58 @@ export default {
 </script>
 
 <style scoped>
+.library-search-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.library-search-field {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+}
+.exSearch {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 12px 8px 44px;
+    color: #212529;
+    background: #fff;
+    border: 1px solid #c5c5c5;
+    border-radius: 5px;
+}
+.library-search-button,
+.library-filter-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    flex: 0 0 44px;
+}
+.library-search-button {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.library-search-button img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+.library-filter-button img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+.library-search-button:focus-visible,
+.library-filter-button:focus-visible {
+    outline: 2px solid #212529;
+    outline-offset: 2px;
+}
 .drag-el:active {
     cursor: grabbing;
 }
