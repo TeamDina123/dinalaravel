@@ -164,8 +164,8 @@ class ConsultationFormController extends Controller
         // Get or create tags and assign to user
         foreach ($tagsToAssign as $tagName) {
             $tag = Tag::firstOrCreate(
-                ['name' => $tagName],
-                ['type' => 'consultation', 'category' => 'user']
+                ['name' => $tagName, 'category' => 'client'],
+                ['type' => 'consultation']
             );
 
             // Assign tag to user if not already assigned

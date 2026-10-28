@@ -30,13 +30,15 @@ class SubscriptionsController extends Controller
 
     function getSubscriptionStatus(){
         $subDetail = UserDetail::where('user_id',Auth::id())->first(['subscription','subscription_status']);
-        if($subDetail && $subDetail->subscription_status==='active'){
-            $subscription = Subscription::where('id',$subDetail->subscription)->first(['id', 'name', 'access_type']);
-            $subType = $subscription?->access_type;
+        if(\App\Support\SubscriptionAccess::isActive(Auth::id())){
+            $store = \App\Support\SubscriptionAccess::activeStore(Auth::id());
+            $legacy = \App\Support\SubscriptionAccess::activeLegacy(Auth::id());
+            $subscription = Subscription::where('id', $legacy?->sub_id ?? $subDetail?->subscription)->first(['id', 'name', 'access_type']);
+            $subType = $store ? \App\Support\StoreSubscriptionProducts::accessType($store->product_id) : $subscription?->access_type;
             return response()->json([
                 'status' => true,
                 'message' => 'Subscription is Active.',
-                'subscription' => $subscription?->name,
+                'subscription' => $store ? \App\Support\StoreSubscriptionProducts::label($store->product_id) : $subscription?->name,
                 'subscription_id' => $subscription?->id,
                 'access_type' => $subType,
                 'two_way_chat' => $subType==='full_access'?true:false

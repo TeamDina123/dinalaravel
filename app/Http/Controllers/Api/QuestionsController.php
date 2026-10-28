@@ -33,7 +33,7 @@ class QuestionsController extends Controller
         $lang = UserSetting::where('user_id',Auth::id())->pluck('language')->first();
         $ques = Question::orderBy('order','asc')->where('status',1)->get();
         foreach ($ques as $que) {
-            if($lang==='en'){
+            if($lang!=='ar'){
                 $que->question = $que->question_en;
                 $que->options = $que->options_en;
                 $que->note = $que->note_en;
@@ -112,10 +112,10 @@ class QuestionsController extends Controller
                 }
                 $ans->save();
 
-                if($que->tag === 'ANSWER'){             // if question tag is enabled
+                if($que->tag === 'ANSWER' || in_array($que->type, ['single_choice', 'multiple_choice'], true)){
                     if($ans->answer_type==='single'){       // if answer type is single
                         if(!empty($ans->answer) && $ans->answer !== null && $ans->answer !== ''){
-                            $tag = Tag::where('name',$ans->answer)->first();
+                            $tag = Tag::where('name',$ans->answer)->where('category', 'client')->first();
                             if($tag){                                 // if tag exist, put its id in different array
                                 if(!in_array($tag->id,$tagsArray))
                                 array_push($tagsArray,$tag->id);
@@ -131,7 +131,7 @@ class QuestionsController extends Controller
                     } else {        // if answer type is multiple
                         foreach (json_decode($ans->answer) as $answ) {      // repeat above tag adding procedure for each answer
                             if(!($answ==='' || $answ===null)){
-                                $tag = Tag::where('name',$answ)->first();
+                                $tag = Tag::where('name',$answ)->where('category', 'client')->first();
                                 if($tag){
                                     if(!in_array($tag->id,$tagsArray))
                                     array_push($tagsArray,$tag->id);
@@ -153,10 +153,11 @@ class QuestionsController extends Controller
             $user = User::find($userId);
             if ($user && !empty($tagsArray)) {
                 // Sync tags to user_tags pivot table (new system)
-                $user->tags()->sync($tagsArray);
+                $legacyTags = json_decode($user->getRawOriginal('tags') ?? '[]', true) ?: [];
+                $user->tags()->syncWithoutDetaching(array_unique(array_merge($legacyTags, $tagsArray)));
                 
                 // Also update old tags column for backward compatibility
-                User::where('id',$userId)->update(['tags' => json_encode($tagsArray)]);
+                User::where('id',$userId)->update(['tags' => json_encode($user->tags()->pluck('tags.id')->all())]);
             }
             
             // Create or update ConsultationForm to mark consultation as completed

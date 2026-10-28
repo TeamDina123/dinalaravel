@@ -42,12 +42,13 @@
                                 <p class="mb-0 mt-2">Thumbnail: </p>
                             </div>
                             <div class="col-10 tsl brds-2 p-2 d-flex align-items-center position-relative">
-                                <img v-if="thumbnailPreview" :src="thumbnailPreview" class="me-2" alt="Meal plan thumbnail preview" style="height:54px;width:85px;object-fit:contain;background:white;">
+                                <img v-if="thumbnailPreview" :src="thumbnailPreview" class="me-2" alt="Meal plan thumbnail preview" style="height:80px;width:100px;object-fit:cover;background:white;">
                                 <p v-if="postData.image==null" class="mb-0">Select an image file (optional)</p>
                                 <p v-else class="mb-0">{{postData.image.name}}</p>
                                 <input type="file" @change="getImage" ref="thumbnailFile" accept="image/*" style="position:absolute;height:100%;width:100%;top:0;left:0;opacity:0;">
                             </div>
                         </div>
+                        <p class="small text-muted px-2">Cover size: 1000 × 800 px (5:4). Keep text away from the edges; other proportions are cropped in the app.</p>
                         <div class="row px-2 mb-2">
                             <div class="col-2">
                                 <p class="mb-0 mt-2">File 1: </p>

@@ -83,7 +83,7 @@ Route::get('media/{type}/{filename}', [MediaController::class, 'show'])
 Route::get('introduction-video', [MediaController::class, 'introductionVideoMeta']);
 
 // Public consultation form routes (before auth)
-Route::post('submit-consultation', [ConsultationFormController::class, 'submitConsultation']);
+Route::post('submit-consultation', [ConsultationFormController::class, 'submitConsultation'])->middleware(['auth:api', \App\Http\Middleware\RequireWaiver::class]);
 Route::get('check-consultation-status', [ConsultationFormController::class, 'checkConsultationStatus'])->middleware('auth:api');
 Route::get('get-consultation', [ConsultationFormController::class, 'getConsultation'])->middleware('auth:api');
 
@@ -96,6 +96,8 @@ Route::group(['middleware' => ['auth:api', 'checkUser'], 'json.response'], funct
 	//auth
 	Route::get('token-validity', [AuthController::class, 'isTokenValid']);
 	Route::get('app-start-checks', [AuthController::class, 'appStartupChecks']);
+    Route::get('onboarding/waiver', [\App\Http\Controllers\Api\OnboardingController::class, 'status']);
+    Route::post('onboarding/waiver', [\App\Http\Controllers\Api\OnboardingController::class, 'accept']);
 	Route::post('update-fcm-token', [AuthController::class, 'updateFcmToken']);
 	Route::post('logout', [AuthController::class, 'logout']);
 	Route::post('delete-account', [AuthController::class, 'deleteAccount']);
@@ -150,8 +152,8 @@ Route::group(['middleware' => ['auth:api', 'checkUser'], 'json.response'], funct
 	Route::post('getUserNotification', [NotificationsController::class, 'getUserNotifications']);
 
 	//  Submit consultation answers
-	Route::post('submit-answers', [QuestionsController::class, 'submitAnswers']);
-	Route::group(['middleware' => ['checkSub', 'checkConsultation']], function () {
+	Route::post('submit-answers', [QuestionsController::class, 'submitAnswers'])->middleware(\App\Http\Middleware\RequireWaiver::class);
+	Route::group(['middleware' => [\App\Http\Middleware\RequireWaiver::class, 'checkSub', 'checkConsultation']], function () {
 
 		//chats
 		Route::get('delete-message/{id}', [ChatsController::class, 'deleteMessage']);

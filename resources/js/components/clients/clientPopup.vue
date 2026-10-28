@@ -57,8 +57,15 @@
                             </div>
                         </div>
                         <div class="brds-2 tsl  ms-3 p-2" style="width:32%;overflow-y:auto;">
-                            <p v-if="clientTags.names.length<1">No Tags to show</p>
+                            <p v-if="clientTags.names.length<1 && !(clientTags.consultation_answers || []).length">No Tags to show</p>
                             <p v-for="(item, index) in clientTags.names" :key="index" class="px-2 float-start m-1" style="background-color:#F2A18C;border-radius:20px">{{item}}</p>
+                            <div v-if="(clientTags.consultation_answers || []).length" style="clear:both;padding-top:8px;">
+                                <strong>Consultation answers</strong>
+                                <p v-for="(item, index) in clientTags.consultation_answers" :key="'consultation-' + index" class="px-2 py-1 m-1" style="background-color:#FCEAE5;border-radius:12px;overflow-wrap:anywhere;">
+                                    <small style="display:block;">{{ item.question }}</small>
+                                    {{ item.answer }}
+                                </p>
+                            </div>
                         </div>
                         <!-- <div class="brds-2 tsl float-start ms-3" style="width:37%;height:150px;">
                             <img src="/images/Group16361.png" alt="Error" class="m-3 float-start" style="height:120px">
@@ -567,7 +574,8 @@ export default {
             tagsDiv: false,
             clientTags: {
                 ids: [],
-                names: []
+                names: [],
+                consultation_answers: []
             },
             headers: [
                 { text: "Amount", value: "amount_paid", sortable: true },

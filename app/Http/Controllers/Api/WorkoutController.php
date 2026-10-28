@@ -492,14 +492,13 @@ class WorkoutController extends Controller
     }
 
     function allWorkoutsList(Request $request){
-        $lang = strtolower((string) $request->input('lang', UserContentLocale::forAuthenticatedUser()));
+        $lang = strtolower((string) ($request->input('lang') ?: UserContentLocale::forAuthenticatedUser()));
         $tagIds = $this->normalizeWorkoutTagIds($request->input('tag_ids'));
         $wrks = Workout::where('category', 'master')
             ->where(function ($query) {
                 $query->whereNull('routine_status')
                     ->orWhere('routine_status', 'approved');
             })
-            ->availableInContentLocale($lang)
             ->select(['id', 'title', 'type', 'content_code', 'image', 'tags', 'language', 'locale_translations'])
             ->withCount('workoutExercises')
             ->orderBy('title', 'asc')
@@ -507,13 +506,15 @@ class WorkoutController extends Controller
             ->get();
         $returnData = [];
         foreach ($wrks as $wrk) {
-            if (WorkoutExercise::where('workout_id', $wrk->id)->count() === 0) {
+            if ($wrk->workout_exercises_count === 0) {
                 continue;
             }
             if ($tagIds !== [] && ! $this->workoutMatchesAnyTag($wrk, $tagIds)) {
                 continue;
             }
             ContentLocaleResolver::overlayWorkout($wrk, $lang);
+            // Keep published routines discoverable even when no translation exists.
+            $wrk->tagNames = Tag::whereIn('id', $this->parseTagIds($wrk->tags))->pluck('name')->all();
             $returnData[] = $wrk;
         }
 

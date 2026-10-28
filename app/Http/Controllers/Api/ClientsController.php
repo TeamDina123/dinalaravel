@@ -96,13 +96,23 @@ class ClientsController extends Controller
         $user = User::where('id',$id)->where('role',1)->first();
         if($user){
             $tags = new stdClass;
-            if(is_null($user->tags)){
-                $tags->ids = [];
-                $tags->names = [];
-            } else {
-                $tags->ids = json_decode($user->tags);
-                $tags->names = Tag::whereIn('id',$tags->ids)->pluck('name')->toArray();
-            }
+            $legacyIds = json_decode($user->getRawOriginal('tags') ?? '[]', true) ?: [];
+            $tags->ids = array_values(array_unique(array_merge($legacyIds, $user->tags()->pluck('tags.id')->all())));
+            $tags->names = Tag::whereIn('id', $tags->ids)->pluck('name')->toArray();
+            // Existing clients may have completed consultation before tag generation
+            // was enabled. Display their saved answers without rewriting history.
+            $tags->consultation_answers = UserAnswer::where('user_id', $id)
+                ->with('question')->orderBy('id')->get()->flatMap(function ($answer) {
+                    $values = $answer->answer_type === 'multiple'
+                        ? json_decode($answer->answer ?? '[]', true)
+                        : [$answer->answer];
+                    if (!is_array($values)) return [];
+                    return collect($values)->filter(fn ($value) => is_scalar($value) && trim((string) $value) !== '')
+                        ->map(fn ($value) => [
+                            'question' => $answer->question?->question_en ?? 'Consultation answer',
+                            'answer' => trim((string) $value),
+                        ]);
+                })->values()->all();
             return response()->json([
                 'status' => true,
                 'data' => $tags
@@ -125,6 +135,7 @@ class ClientsController extends Controller
             'message' => $validate->errors()->all()[0]
         ]);
         $user = User::find($request->user_id);
+        $user->tags()->sync($request->tags ?? []);
         if (is_null($request->tags) || count($request->tags)==0)
         $user->tags = null;
         else
