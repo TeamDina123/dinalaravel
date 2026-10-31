@@ -38,6 +38,10 @@ class StoreSubscriptionPricing
 
     private static function fromApplePayload(array $payload, ?string $productId): ?array
     {
+        if (isset($payload['productId'], $payload['price'], $payload['currency'])
+            && (!$productId || $payload['productId'] === $productId)) {
+            return self::build(((int) $payload['price']) / 1000, (string) $payload['currency']);
+        }
         $items = collect($payload['latest_receipt_info'] ?? [])
             ->when($productId, fn ($collection) => $collection->where('product_id', $productId))
             ->sortByDesc(fn ($item) => (int) ($item['expires_date_ms'] ?? 0));

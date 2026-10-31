@@ -34,6 +34,7 @@ return [
         'google_package_name' => env('GOOGLE_PLAY_PACKAGE_NAME'),
         'google_service_account_json' => env('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON'),
         'apple_shared_secret' => env('APPLE_IAP_SHARED_SECRET'),
+        'apple_bundle_id' => env('APPLE_IAP_BUNDLE_ID', 'com.fitnesswithdina.fitnessapp'),
         'media_token_secret' => env('MEDIA_ACCESS_TOKEN_SECRET', env('APP_KEY')),
     ],
 

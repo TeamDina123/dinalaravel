@@ -44,6 +44,16 @@ class StoreSubscriptionController extends Controller
             ? $this->verifyGoogleSubscription($productId, $request->input('purchase_token'))
             : $this->verifyAppleReceipt($productId, $request->input('receipt_data'));
 
+        if ($platform === 'ios' && !empty($result['original_transaction_id'])
+            && StoreSubscription::where('platform', 'ios')
+                ->where('original_transaction_id', $result['original_transaction_id'])
+                ->where('user_id', '!=', Auth::id())->exists()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This Apple subscription is linked to another account. Please sign in to that account.',
+            ], 409);
+        }
+
         if (!$result['active']) {
             $this->storeVerification($request, $result, 'expired');
             Log::warning('Store subscription verification returned inactive', [
@@ -212,6 +222,9 @@ class StoreSubscriptionController extends Controller
 
     private function verifyAppleReceipt(string $productId, string $receiptData): array
     {
+        if (substr_count($receiptData, '.') === 2) {
+            return $this->verifyAppleSignedTransaction($productId, $receiptData);
+        }
         $payload = [
             'receipt-data' => $receiptData,
             'password' => config('services.store_iap.apple_shared_secret'),
@@ -256,12 +269,45 @@ class StoreSubscriptionController extends Controller
         return Http::timeout(15)->post($url, $payload)->json() ?? ['status' => -1];
     }
 
+    private function verifyAppleSignedTransaction(string $productId, string $signedTransaction): array
+    {
+        try {
+            $transaction = app(\App\Services\AppleSignedTransaction::class)->decode($signedTransaction);
+        } catch (\Throwable $error) {
+            return $this->inactiveResult(['error' => 'Apple transaction signature could not be verified.'], 'apple_invalid_signature');
+        }
+        if (($transaction['productId'] ?? null) !== $productId
+            || ($transaction['type'] ?? null) !== 'Auto-Renewable Subscription'
+            || empty($transaction['transactionId']) || empty($transaction['originalTransactionId'])
+            || !is_numeric($transaction['purchaseDate'] ?? null)
+            || !is_numeric($transaction['expiresDate'] ?? null)) {
+            return $this->inactiveResult([], 'apple_product_not_found');
+        }
+        $expiresAt = Carbon::createFromTimestampMs((int) $transaction['expiresDate']);
+        $revoked = isset($transaction['revocationDate']);
+        return [
+            'active' => !$revoked && $expiresAt->isFuture(),
+            'transaction_id' => (string) $transaction['transactionId'],
+            'original_transaction_id' => (string) $transaction['originalTransactionId'],
+            'purchased_at' => Carbon::createFromTimestampMs((int) $transaction['purchaseDate']),
+            'expires_at' => $expiresAt,
+            'raw_payload' => $transaction,
+            'reason' => $revoked ? 'apple_subscription_revoked' : ($expiresAt->isFuture() ? null : 'apple_subscription_expired'),
+        ];
+    }
+
     private function storeVerification(Request $request, array $result, string $status): StoreSubscription
     {
+        // Failed Apple verifications have no transaction ID; do not merge every
+        // client's failure into the same (ios, null) record.
+        $purchaseToken = $request->input('purchase_token') ?: ($result['transaction_id'] ?? null);
+        if (!$purchaseToken && $request->input('platform') === 'ios') {
+            $purchaseToken = 'unverified:' . Auth::id() . ':' . hash('sha256', (string) $request->input('receipt_data'));
+        }
         return StoreSubscription::updateOrCreate(
             [
                 'platform' => $request->input('platform'),
-                'purchase_token' => $request->input('purchase_token') ?: ($result['transaction_id'] ?? null),
+                'purchase_token' => $purchaseToken,
             ],
             [
                 'user_id' => Auth::id(),
@@ -333,6 +379,8 @@ class StoreSubscriptionController extends Controller
             'google_play_product_not_found' => 'Purchase product does not match an active app subscription.',
             'apple_product_not_found' => 'Receipt product does not match an active app subscription.',
             'apple_subscription_expired' => 'Subscription is expired.',
+            'apple_subscription_revoked' => 'Apple has revoked or refunded this subscription.',
+            'apple_invalid_signature' => 'Apple purchase could not be verified. Please restore purchases and try again.',
             default => 'Subscription is not active.',
         };
     }
