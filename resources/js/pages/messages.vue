@@ -1,5 +1,6 @@
 <template lang="">
     <NewChat v-if="newChatCompVisib"/>
+    <ClientPopup v-if="profileClientId" :idForDetails="profileClientId" :logInDetails="logInProps" @close="profileClientId = null"/>
     <Inform v-if="informModal" :msgTitle="modalTitle" :msgDetail="modalDetail"/>
     <Confirm v-if="confirmModal" :msgTitle="modalTitle" :msgDetail="modalDetail"/>
     <Preview v-if="previewOn" :file="previewFile" :filetype="previewType"/>
@@ -77,19 +78,19 @@
                 <div v-if="chatProps.active!==null" class="h-100">
                     <div class="convo-head p-3 d-flex justify-content-between">
                         <div class="d-flex pointer">
-                            <div class="px-2 align-self-center">
+                            <button type="button" class="trans_btn px-2 align-self-center" @click="openClientProfile" :aria-label="'View profile for ' + chatProps.active.user_name">
                                 <img :src="chatProps.active.image" alt="" class="rounded-circle" style="width:40px;height:40px"/>
-                            </div>
+                            </button>
                             <div>
                                 <div>
-                                    <p class="h7 mb-0 text-capitalize"><strong>{{chatProps.active.user_name}}</strong></p>
+                                    <button type="button" class="trans_btn h7 mb-0 p-0 text-capitalize" @click="openClientProfile"><strong>{{chatProps.active.user_name}}</strong></button>
                                     <!-- <p class="h8 mb-0">Active 5 minutes ago</p> -->
                                 </div>
                                 <div class="position-relative">
                                     <p style="color: #f2a18c" class="h8 mb-0 float-start">{{chatProps.active.sub}}</p>
                                     <p @click="tagsDiv=!tagsDiv" style="color: #f2a18c" class="h8 mb-0 ms-3 float-start position-relative">View Tags</p>
                                     <div v-if="tagsDiv" class="tsl brds-2 position-absolute p-2" style="max-height:100px;width:200px;background-color:white;z-index:99;overflow-y:auto;top:20px;left:55px;">
-                                        <p v-if="clientsTags.names.length>1" v-for="(item, index) in clientsTags.names" :key="index" class="px-2 float-start m-1" style="background-color:#F2A18C;border-radius:20px;font-size:13px;">{{item}}</p>
+                                        <p v-if="clientsTags.names.length>0" v-for="(item, index) in clientsTags.names" :key="index" class="px-2 float-start m-1" style="background-color:#F2A18C;border-radius:20px;font-size:13px;">{{item}}</p>
                                         <p v-else class="mb-0">No tags assigned</p>
                                     </div>
                                 </div>
@@ -161,6 +162,7 @@ import config from "../config";
 import ChatItem from "../components/messages/chat-item.vue";
 import MsgItem from "../components/messages/msg-item.vue";
 import NewChat from '../components/messages/newChat.vue';
+import ClientPopup from '../components/clients/clientPopup.vue';
 import Inform from '../components/inform.vue';
 import Confirm from '../components/confirm.vue';
 import GetInput from '../components/getInput.vue';
@@ -173,7 +175,7 @@ import axios from "axios";
 
 //  Vue.use(AudioRecorder);
 export default {
-    components: { ChatItem, MsgItem, Inform, Confirm, NewChat, Loader, Preview, GetInput, EmojiPicker, VoiceSendTargetModal, ForwardMessageModal },
+    components: { ClientPopup, ChatItem, MsgItem, Inform, Confirm, NewChat, Loader, Preview, GetInput, EmojiPicker, VoiceSendTargetModal, ForwardMessageModal },
     emits: ['hideBarsEvent', 'showBarsEvent', 'adminCheckEvent', 'checkWindowEvent', 'getConvosEvent', 'activeConvoEvent', 'getMessagesEvent', 'activeGroupEvent', 'getGroupsEvent', 'getGroupMessagesEvent'],
     props: ['groupProps', 'chatProps', 'logInProps'],
     data() {
@@ -202,7 +204,8 @@ export default {
             search: "",
             messageOpt: 'active',
             tagsDiv: false,
-            clientsTags: null,
+            clientsTags: { names: [] },
+            profileClientId: null,
             voiceTargetModal: false,
             voiceSendTarget: null,
             forwardModal: false,
@@ -229,6 +232,10 @@ export default {
         this.chatProps.active = null;
     },
     methods: {
+        openClientProfile() {
+            this.tagsDiv = false;
+            this.profileClientId = this.chatProps.active?.user_id || null;
+        },
         toogleEmojiPicker() {
             this.emojiPicker = !this.emojiPicker;
         },
@@ -239,10 +246,14 @@ export default {
             }, 100)
         },
         openChat(chat) {
+            this.tagsDiv = false;
+            this.clientsTags = { names: [] };
             this.$emit('activeConvoEvent', chat);
             axios.get(config.baseApiUrl + 'client-tags/' + chat.user_id, this.apiConfig).then(res => {
                 if (res.data.status) {
-                    this.clientsTags = res.data.data;
+                    if (this.chatProps.active?.user_id === chat.user_id) {
+                        this.clientsTags = { names: res.data.data?.names || [] };
+                    }
                 }
                 else {
                     this.modalTitle = 'Error!';
