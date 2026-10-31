@@ -95,7 +95,7 @@
     <assignToTrainer v-if="showAssignToTrainer"/>
     <subscribeToProgram v-if="showSubscribeToProgram"/>
     <addHabit v-if="showAddHabit" :selectedUsers="clientIds"/>
-    <clientPopup v-if="showClientPopup" :idForDetails="userId" :logInDetails="logInProps"/>
+    <clientPopup v-if="showClientPopup" :idForDetails="userId" :logInDetails="logInProps" @close="showClientPopup = false"/>
     <Loader v-if="pageLoading" :loadingText="loaderText" />
     <Inform v-if="informModal" :msgTitle="modalTitle" :msgDetail="modalDetail" />
     <p style="display:none;">{{tagsDisplayIndex}}</p>

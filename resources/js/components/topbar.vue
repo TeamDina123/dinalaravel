@@ -127,7 +127,7 @@
                 </div>
             </div>
         </div>
-        <clientPopup v-if="clientPopupComponent" :idForDetails="clientId" :logInDetails="logInProps"/>
+        <clientPopup v-if="clientPopupComponent" :idForDetails="clientId" :logInDetails="logInProps" @close="clientPopupComponent = false"/>
     </div>
 <div v-if="Notificationpop" @click="Notificationpop=false" class="position-absolute" style="height:100vh;width:100vw;top:0;right:0;"></div>
 </template>

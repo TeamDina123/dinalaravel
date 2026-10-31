@@ -86,7 +86,7 @@
     </div>
     <activityPopup v-if="activityShow" :id="activity_id" :type="activity_type" :logInDetails="logInProps"/>
     <automatedMessages v-if="autoMessagePopup"/>
-    <clientPopup v-if="showClientPopup" :idForDetails="clientId" :logInDetails="logInProps"/>
+    <clientPopup v-if="showClientPopup" :idForDetails="clientId" :logInDetails="logInProps" @close="showClientPopup = false"/>
 </template>
 <script>
 import axios from 'axios';

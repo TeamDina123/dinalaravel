@@ -1096,11 +1096,6 @@ export default {
         },
         quitComponent() {
             this.$emit('close');
-            if (this.$parent && typeof this.$parent.ClientPopup === 'function' && Object.prototype.hasOwnProperty.call(this.$parent, 'showClientPopup')) {
-                this.$parent.ClientPopup();
-            } else if (this.$parent && typeof this.$parent.ClientPopup === 'function' && Object.prototype.hasOwnProperty.call(this.$parent, 'clientPopupComponent')) {
-                this.$parent.ClientPopup();
-            }
         },
         acknowledged() {
             this.informModal = false;
