@@ -10,6 +10,14 @@
         />
         <div class="row mt-3 g-3">
             <div class="col-xl-7">
+                <div class="d-flex gap-3 align-items-center mb-2">
+                    <label>Week <select :value="activeWeekNo" @change="selectScheduleWeek(Number($event.target.value))">
+                        <option v-for="week in Math.max(phaseWeeks, ...scheduleWeeks.map(w => w.weekNo))" :key="week" :value="week">{{ week }}</option>
+                    </select></label>
+                    <label>Workout day <select :value="activeDayNo" @change="selectedBuilderDayNo = Number($event.target.value)">
+                        <option v-for="day in 7" :key="day" :value="day">Day {{ day }}</option>
+                    </select></label>
+                </div>
                 <div v-if="scheduleWeeks.length" class="phase-schedule-panel mb-3">
                     <div class="phase-schedule-header">
                         <div>
@@ -55,7 +63,9 @@
                         </div>
                     </div>
                 </div>
-                <p class="mb-2 h8 text-muted">Drag routines into a section, reorder within a section, or change the section tag.</p>
+                <h5>Assigned to Week {{ activeWeekNo }}, Day {{ activeDayNo }}</h5>
+                <p v-if="!selectedScheduleDay" class="mb-2 text-muted">No routines assigned to this day.</p>
+                <p class="mb-2 h8 text-muted">Drag a routine from the library into a section to assign it to this day.</p>
                 <div
                     v-for="section in sections"
                     :key="section.id"
@@ -89,7 +99,7 @@
                                 <i class="fa-solid fa-grip-vertical me-1"></i> Drag to reorder
                             </div>
                             <div v-else class="h8 text-muted mb-1">AI section preview</div>
-                            <span class="day-badge">Day {{ dayNumberForPhaseWorkout(item) }}</span>
+
                             <div v-if="item.workout_detail != null">
                                 <img
                                     v-if="item.workout_detail.image != null"
@@ -121,6 +131,10 @@
                             >
                                 <option v-for="opt in sections" :key="opt.id" :value="opt.id">{{ opt.label }}</option>
                             </select>
+                            <button v-if="!item.ai_section_preview" type="button"
+                                class="btn btn-link btn-sm text-danger" @click.stop="$emit('remove', item.id)">
+                                Remove from phase
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -129,8 +143,8 @@
             <div class="col-xl-5">
                 <div class="shd_card p-3 routine-library-card">
                     <div class="d-flex justify-content-between align-items-center mb-2 routine-library-head">
-                        <h5 class="mb-0">Workout routines</h5>
-                        <span class="h8 text-muted">Drag into a section</span>
+                        <h5 class="mb-0">Routine library</h5>
+                        <span class="h8 text-muted">Available for any day</span>
                     </div>
                     <div class="routine-toolbar mb-3">
                         <div class="routine-search-wrap">
@@ -207,12 +221,13 @@ export default {
             type: String,
             default: 'en',
         },
+        phaseWeeks: { type: Number, default: 1 },
         selectedDeleteIds: {
             type: Array,
             default: () => [],
         },
     },
-    emits: ['refresh', 'update:selectedDeleteIds'],
+    emits: ['remove', 'refresh', 'update:selectedDeleteIds'],
     data() {
         return {
             apiConfig: {
@@ -258,8 +273,8 @@ export default {
                 const weekMatch = String(displayName).match(/\bweek\s*(\d+)/i);
                 const dayMatch = String(displayName).match(/\bday\s*(\d+)/i);
                 const sequenceDay = index + 1;
-                const weekNo = weekMatch ? Number(weekMatch[1]) : Math.floor((sequenceDay - 1) / 7) + 1;
-                const dayNo = dayMatch ? Number(dayMatch[1]) : ((sequenceDay - 1) % 7) + 1;
+                const weekNo = item.week_number || (weekMatch ? Number(weekMatch[1]) : 1);
+                const dayNo = item.day_number || (dayMatch ? Number(dayMatch[1]) : 1);
                 const dayType = this.dayTypeForRoutine(item);
                 const normalizedSection = this.normalizedSectionTag(item.section_tag);
 
@@ -270,7 +285,18 @@ export default {
                     };
                 }
 
+                const existingDay = weekMap[weekNo].days.find(day => day.dayNo === dayNo);
+                const exerciseCount = Number(item.section_exercise_count ?? item.workout_detail?.workout_exercises_count ?? 0);
+                if (existingDay) {
+                    existingDay.items.push(item);
+                    existingDay.exerciseCount += exerciseCount;
+                    existingDay.displayName += ', ' + displayName;
+                    existingDay.workoutTitle = existingDay.items.length + ' routines';
+                    existingDay.sectionLabel = 'Multiple routines';
+                    return;
+                }
                 weekMap[weekNo].days.push({
+                    items: [item],
                     key: weekNo + '-' + dayNo + '-' + item.id,
                     weekNo,
                     dayNo,
@@ -279,7 +305,7 @@ export default {
                     dayType,
                     displayName,
                     workoutTitle: title,
-                    exerciseCount: item.section_exercise_count ?? item.workout_detail?.workout_exercises_count ?? 0,
+                    exerciseCount,
                     sectionLabel: this.sectionLabel(normalizedSection),
                     image: item.workout_detail?.image,
                     item,
@@ -302,19 +328,19 @@ export default {
             if (this.scheduleWeeks.length === 0) {
                 return null;
             }
-            return this.scheduleWeeks.find((week) => week.weekNo === this.activeWeekNo) || this.scheduleWeeks[0];
+            return this.scheduleWeeks.find((week) => week.weekNo === this.activeWeekNo) || null;
         },
         selectedScheduleDay() {
             if (!this.selectedScheduleWeek || this.selectedScheduleWeek.days.length === 0) {
                 return null;
             }
-            return this.selectedScheduleWeek.days.find((day) => day.dayNo === this.activeDayNo) || this.selectedScheduleWeek.days[0];
+            return this.selectedScheduleWeek.days.find((day) => day.dayNo === this.activeDayNo) || null;
         },
         activeWeekNo() {
-            return this.selectedBuilderWeekNo || this.scheduleWeeks[0]?.weekNo || null;
+            return this.selectedBuilderWeekNo || this.scheduleWeeks[0]?.weekNo || 1;
         },
         activeDayNo() {
-            return this.selectedBuilderDayNo || this.selectedScheduleWeek?.days?.[0]?.dayNo || null;
+            return this.selectedBuilderDayNo || this.selectedScheduleWeek?.days?.[0]?.dayNo || 1;
         },
         scheduleRoutineCount() {
             return this.orderedPhaseWorkouts().length;
@@ -324,10 +350,7 @@ export default {
         programLanguage() {
             this.loadWorkouts();
         },
-        phaseWorkouts() {
-            this.selectedBuilderWeekNo = null;
-            this.selectedBuilderDayNo = null;
-        },
+
     },
     mounted() {
         this.loadWorkouts();
@@ -341,7 +364,7 @@ export default {
             return [...realItems, ...aiItems];
         },
         workoutsForSection(sectionId) {
-            return (this.phaseWorkouts || [])
+            return (this.selectedScheduleDay?.items || [])
                 .filter((item) => this.normalizedSectionTag(item.section_tag) === sectionId)
                 .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
         },
@@ -357,7 +380,7 @@ export default {
                 return [];
             }
 
-            return this.orderedPhaseWorkouts()
+            return (this.selectedScheduleDay?.items || [])
                 .filter((item) => this.normalizedSectionTag(item.section_tag) === 'workout_routine')
                 .map((item) => {
                     const routineSections = item.workout_detail?.routine_sections || {};
@@ -405,8 +428,8 @@ export default {
             if (item.day_number) {
                 return item.day_number;
             }
-            const index = this.orderedPhaseWorkouts().findIndex((phaseWorkout) => phaseWorkout.id === item.id);
-            return index >= 0 ? index + 1 : 1;
+            const match = String(item.display_name || item.workout_detail?.title || '').match(/\bday\s*(\d+)/i);
+            return match ? Number(match[1]) : 1;
         },
         dayTypeForRoutine(item) {
             const label = [
@@ -452,7 +475,7 @@ export default {
             return 'phase-routine-card-' + String(item.id).replace(/[^a-zA-Z0-9_-]/g, '-');
         },
         isSelectedRoutine(item) {
-            return !item.ai_section_preview && this.selectedScheduleDay?.phaseWorkoutId === item.id;
+            return !item.ai_section_preview && this.selectedScheduleDay?.items.some(routine => routine.id === item.id);
         },
         modifyLanguage(language) {
             if (language === 'no') {
@@ -538,6 +561,8 @@ export default {
                 program_phase_id: this.phaseId,
                 workout_id: this.draggedLibraryWorkout.id,
                 section_tag: sectionTag,
+                week_number: this.activeWeekNo,
+                day_number: this.activeDayNo,
             };
             axios.post(config.baseApiUrl + 'add-phase-workout-routine', postData, this.apiConfig)
                 .then((res) => {
@@ -799,7 +824,6 @@ export default {
     object-fit: contain;
     width: 30px;
 }
-.day-badge,
 .language-badge {
     background: #111;
     border-radius: 999px;
@@ -808,12 +832,6 @@ export default {
     font-weight: 700;
     line-height: 1;
     padding: 7px 8px;
-}
-.day-badge {
-    position: absolute;
-    right: 8px;
-    top: 8px;
-    z-index: 2;
 }
 .routine-thumb {
     min-height: 82px;

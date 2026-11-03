@@ -97,7 +97,7 @@
                         </div>
                     </div>
                     <div class="bg-white py-3 ps-4 pe-2" v-show="detailOpen[index]">
-                        <p @click="programDetailVisible = true, phaseDetailVisible = false"
+                        <p @click="fetchProgramDetail(prog.id, prog.weeks)"
                             class="mb-1 prim_txt fw-bold h8 pointer">
                             Summary and Subscribers</p>
                         <p class="h8 mb-1">Calendar</p>
@@ -254,6 +254,12 @@
                                 <div v-if="selectedAiDay.recovery_guidance?.length" class="ai-recovery-list mt-2">
                                     <p v-for="note in selectedAiDay.recovery_guidance" :key="note" class="mb-1">{{ note }}</p>
                                 </div>
+                                <div v-if="selectedAiDay.routines" class="mt-3">
+                                    <p v-for="routine in selectedAiDay.routines" :key="routine.id" class="mb-1">
+                                        <strong>{{ routine.section }}</strong> · {{ routine.title }}
+                                    </p>
+                                </div>
+                                <template v-else>
                                 <div v-for="section in selectedAiDay.sections" :key="section.key" class="ai-section mt-3">
                                     <h6>{{ section.label }}</h6>
                                     <div v-for="exercise in section.exercises" :key="exercise.workout_exercise_id" class="ai-exercise-row">
@@ -282,6 +288,7 @@
                                 <div v-if="selectedAiDay.sections.length === 0" class="ai-empty-state mt-3">
                                     No workout exercises are attached to this day.
                                 </div>
+                                </template>
                             </div>
                         </div>
                         <div class="mt-3" style="clear: both;">
@@ -355,10 +362,13 @@
                             </div>
                             <ProgramPhaseRoutineBuilder
                                 v-if="phaseDetail.id"
+                                :key="phaseDetail.id"
+                                :phase-weeks="Number(phaseDetail.weeks) || 1"
                                 :phase-id="phaseDetail.id"
                                 :phase-workouts="phaseDetail.phase_workouts || []"
                                 :program-language="programLanguage || programDetail.language || 'en'"
                                 v-model:selected-delete-ids="toDeleteIds"
+                                @remove="removeWorkout([$event])"
                                 @refresh="fetchPhaseDetail(null)"
                             />
                         </div>
@@ -1078,6 +1088,7 @@ export default {
                 if (res.data.status) {
                     this.getAllPrograms();
                     this.programDetailVisible = false;
+                    this.phaseDetailVisible = false;
                 }
                 else {
                     this.modalTitle = 'Error!';
@@ -1089,7 +1100,7 @@ export default {
                 this.pageLoading = false;
                 console.log(er.error);
                 this.modalTitle = 'Failed!';
-                this.modalDetail = 'Something Went Wrong';
+                this.modalDetail = er.response?.data?.message || 'Could not delete the program. Check your connection and try again.';
                 this.informModal = true;
             })
         },
@@ -1182,15 +1193,15 @@ export default {
                 return;
             this.deleteProgram();
         },
-        removeWorkout() {
-            if (this.toDeleteIds.length == 0) {
+        removeWorkout(ids = this.toDeleteIds) {
+            if (ids.length == 0) {
                 this.modalTitle = 'Error!';
                 this.modalDetail = 'Please select Workouts to remove';
                 this.informModal = true;
                 return
             }
             const postData = {
-                "ids": this.toDeleteIds
+                "ids": ids
             };
             this.pageLoading = true;
             this.loaderText = 'Removing';

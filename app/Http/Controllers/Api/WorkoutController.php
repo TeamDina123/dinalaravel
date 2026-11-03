@@ -410,7 +410,7 @@ class WorkoutController extends Controller
         $used = ProgramPhaseWorkout::where('workout_id',$id)->first();
         if($used)
         return response()->json([
-            'status' => true,
+            'status' => false,
             'message' => "Cannot Delete Workout being Used in a Program."
         ]);
         Workout::destroy($id);
@@ -471,23 +471,19 @@ class WorkoutController extends Controller
                 'status' => false,
                 'message' => $validate->errors()->all()[0]
             ]);
-            $idsToDelete = [];
-            foreach ($request->ids as $key => $value) {
-                $inPhase = ProgramPhaseWorkout::where('workout_id',$value)->first();
-                if(is_null($inPhase))
-                array_push($idsToDelete,$value);
+            $usedIds = ProgramPhaseWorkout::whereIn('workout_id', $request->ids)
+                ->distinct()->pluck('workout_id')->all();
+            $deleted = DB::transaction(function () use ($request, $usedIds) {
+                return Workout::destroy(array_diff($request->ids, $usedIds));
+            });
+            $message = $deleted . ' routine(s) deleted.';
+            if ($usedIds) {
+                $message .= ' Remove the remaining routines from their programs first.';
             }
-            Workout::destroy($idsToDelete);
-            return response()->json([
-                'status' => true,
-                'message' => 'Deleted Successfully. (Workouts being used in programs can not be deleted)'
-            ]);
-        } catch(Exception $er){
-            return response()->json([
-                'status' => true,
-                'message' => 'Something Went Wrong.',
-                'error' => $er->getMessage().'------Line # '.$er->getLine().'----File: '.$er->getFile()
-            ]);
+            return response()->json(['status' => $deleted > 0, 'message' => $message]);
+        } catch (Exception $er) {
+            report($er);
+            return response()->json(['status' => false, 'message' => 'Unable to delete the selected routines.']);
         }
     }
 

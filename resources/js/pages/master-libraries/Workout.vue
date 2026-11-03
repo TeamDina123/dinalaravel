@@ -272,7 +272,7 @@ export default {
                 this.deletionIds = [];
                 if (res.data.status) {
                     this.modalTitle = 'Done!';
-                    this.modalDetail = "Workout Deleted Successfully(Other than workouts added in programs)";
+                    this.modalDetail = res.data.message;
                     this.informModal = true;
                     this.getAllWorkouts();
                     // location.reload();

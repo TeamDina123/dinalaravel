@@ -185,7 +185,7 @@ class ProgramsController extends Controller
                 return $this->notFound('Invalid ID.');
             $subs = ProgramSub::where('program_id', $id)->count();
             if ($subs > 0)
-                return $this->error('Cannot Delete Program With Active Subscribers.', 400);
+                return $this->error('This program has subscribers. Remove them under Summary and Subscribers before deleting the program.', 409);
             Program::destroy($id);
             return $this->success(null, 'Deleted Successfully.');
         } catch (Exception $er) {
@@ -249,7 +249,7 @@ class ProgramsController extends Controller
         $phase = ProgramPhase::where('id', $id)
             ->select('id', 'program_id', 'phase_no', 'weeks', 'name', 'summary', 'created_at', 'updated_at')
             ->with(['phaseWorkouts' => function ($q) {
-                $q->select('id', 'workout_id', 'display_name', 'section_tag', 'sort_order', 'program_phase_id')
+                $q->select('id', 'workout_id', 'display_name', 'section_tag', 'sort_order', 'program_phase_id', 'week_number', 'day_number')
                     ->orderBy('sort_order')
                     ->with(['workoutDetail' => function ($q2) {
                         $q2->select('id', 'image', 'title', 'routine_sections')->withCount('workoutExercises');
@@ -477,6 +477,8 @@ class ProgramsController extends Controller
         $validate = Validator::make($request->all(), [
             'program_phase_id' => 'required|exists:program_phases,id',
             'workout_id' => 'required|exists:workouts,id',
+            'week_number' => 'sometimes|integer|min:1',
+            'day_number' => 'sometimes|integer|between:1,7',
             'section_tag' => 'required|string|max:64',
         ]);
         if ($validate->fails()) {
@@ -494,6 +496,8 @@ class ProgramsController extends Controller
         $phaseWorkout->program_phase_id = $request->program_phase_id;
         $phaseWorkout->workout_id = $workout->id;
         $phaseWorkout->display_name = $workout->title;
+        $phaseWorkout->week_number = $request->input('week_number');
+        $phaseWorkout->day_number = $request->input('day_number');
         $phaseWorkout->section_tag = $request->section_tag;
         $phaseWorkout->sort_order = $nextSortOrder;
         $phaseWorkout->save();

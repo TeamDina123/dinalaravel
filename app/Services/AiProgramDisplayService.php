@@ -124,6 +124,19 @@ class AiProgramDisplayService
                 'week_no' => (int) $weekNo,
                 'days' => $items
                     ->pluck('day')
+                    ->groupBy('day_no')
+                    ->map(function (Collection $routines) {
+                        $day = $routines->first();
+                        $day['routines'] = $routines->map(fn ($routine) => [
+                            'id' => $routine['id'],
+                            'title' => $routine['display_name'],
+                            'section' => $routine['routine_section'],
+                        ])->values()->all();
+                        if ($routines->count() > 1) {
+                            $day['display_name'] = $routines->count() . ' routines';
+                        }
+                        return $day;
+                    })
                     ->sortBy('day_no')
                     ->values()
                     ->all(),
@@ -163,8 +176,8 @@ class AiProgramDisplayService
         }
 
         return [
-            'week_no' => $weekNo ?: $phaseStartWeek + intdiv($index, 7),
-            'day_no' => $dayNo ?: ($index % 7) + 1,
+            'week_no' => $phaseWorkout->week_number ? $phaseStartWeek + $phaseWorkout->week_number - 1 : ($weekNo ?: $phaseStartWeek),
+            'day_no' => $phaseWorkout->day_number ?: ($dayNo ?: 1),
         ];
     }
 
@@ -177,6 +190,7 @@ class AiProgramDisplayService
 
         return [
             'id' => 'phase-workout-' . $phaseWorkout->id,
+            'routine_section' => $this->label($phaseWorkout->section_tag ?: 'custom'),
             'week_no' => $position['week_no'],
             'day_no' => $position['day_no'],
             'day_label' => 'Day ' . $position['day_no'],
