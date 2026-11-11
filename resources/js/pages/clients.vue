@@ -1,76 +1,69 @@
 <template lang="">
-    <div v-if="showfilters" @click.self="showfilters=false" class="my-popup-component" style="justify-content:end">
-            <div class="position-relative" style="width:330px;height:100vh;background-color:white;border-top-left-radius:20px;border-bottom-left-radius:20px;">
+    <div v-if="showfilters" @click.self="showfilters=false" class="my-popup-component clients-filter-overlay" style="justify-content:end">
+            <div class="position-relative clients-filter-panel">
                 <div v-if="tagsClose" style="height:100%;width:100%;position:absolute;z-index:999;top:0;left:0;" @click="closeTagsDiv"></div>
                 <button @click="showfilters=false" class="trans_btn position-absolute" style="right:15px;top:10px;font-size:25px">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
                 <p class="ms-4 mt-4" style="font-size:15px;">Clients Filters</p>
-                <div class="w-100" style="height:calc(100% - 165px);overflow-y:auto;text-align:center;">
+                <div class="w-100 clients-filter-body">
                     <button v-for="(item, index) in tags" :key="index" @click.self="openTagsDiv(index)" class="brds-1 mt-2 filterBtn float-left">
                         <p @click="openTagsDiv(index)" class="mb-0" v-if="item.tagType!==null">{{item.tagType}}</p>
                         <p @click="openTagsDiv(index)" class="mb-0" v-else>Un Categorized</p>
                         <img @click="openTagsDiv(index)" src="/cms-assets/images/Clients/downarrow.png" class="filterimg" alt="">
-                        <div v-if="tagTypeShow[index]==true" class="tsl" style="width:255px;height:150px;position:absolute;top:30px;left:2px;z-index:9999 !important;background-color:white;overflow-y:auto;">
-                            <div class="my-1" style="width:100%;height:20px;float:left;text-align:center;" v-for="(item, index) in tags[index].tagList" :key="index">
+                        <div v-if="tagTypeShow[index]==true" class="tsl filter-tag-dropdown">
+                            <div class="my-1" style="width:100%;height:20px;float:left;text-align:center;" v-for="(tagItem, tagIndex) in tags[index].tagList" :key="tagIndex">
                                 <div class="mx-auto w-80">
-                                    <input v-model="selectedTagsForFilter" :value="item.name" type="checkbox" class="form-check-input me-1 float-start" style="margin-top:6px">
-                                    <p class="ms-1 float-start" style="font-size:18px;margin:0px;color:#343434;">{{item.name}}</p>
+                                    <input v-model="selectedTagsForFilter" :value="tagItem.name" type="checkbox" class="form-check-input me-1 float-start" style="margin-top:6px">
+                                    <p class="ms-1 float-start" style="font-size:18px;margin:0px;color:#343434;">{{tagItem.name}}</p>
                                 </div>
                             </div>
                         </div>
                     </button>
                 </div>
-                <div class="position-absolute bottom-0 w-100 mb-3 d-flex flex-wrap justify-content-center" style="height:80px;">
-                    <button class="brds-2 mb-2" style="width:180px;height:40px;border:none;background-color:#F2A18C;font-size:16px;color:#FFFFFF;" @click="tagsFilterApply">Apply</button>
-                    <button class="brds-2" style="width:180px;height:40px;border:none;background-color:#F2A18C;font-size:16px;color:#FFFFFF;" @click="tagsFilterApply(1)">Reset</button>
+                <div class="position-absolute bottom-0 w-100 mb-3 d-flex flex-wrap justify-content-center clients-filter-actions">
+                    <button class="brds-2 mb-2 filter-action-btn" @click="tagsFilterApply">Apply</button>
+                    <button class="brds-2 filter-action-btn" @click="tagsFilterApply(1)">Reset</button>
                 </div>
             </div>
         </div>
-    <div class="main brds-3 position-relative">
-        <div class="top position-relative ps-3">
-            <button class="top-btn" :class="{ active: showSummary}" style="border-top-left-radius:10px;border-bottom-left-radius:10px;border-left:1px solid #C5C5C5" @click="navigate(1)">Summary</button>
-            <button class="top-btn" :class="{ active: showExercise}" @click="navigate(2)">Exercise</button>
-            <button class="top-btn" :class="{ active: showNutrition}" @click="navigate(3)">Nutrition</button>
-            <button class="top-btn" :class="{ active: showWeight}" @click="navigate(4)">Weight</button>
-            <button class="top-btn" :class="{ active: showPayment}" @click="navigate(5)">Payment</button>
-            <button class="top-btn" :class="{ active: showEngagement}" style="border-top-right-radius:10px;border-bottom-right-radius:10px;" @click="navigate(6)">Engagement</button>
-            <div class="float-end d-flex align-items-center">
-                <div class="px-1 brds-2 " style="background-color:white;border:1px solid #C5C5C5;margin-top:10px;">
+    <div class="main brds-3 position-relative clients-page">
+        <div class="top position-relative clients-top">
+            <div class="clients-tabs">
+                <button class="top-btn" :class="{ active: showSummary}" style="border-top-left-radius:10px;border-bottom-left-radius:10px;border-left:1px solid #C5C5C5" @click="navigate(1)">Summary</button>
+                <button class="top-btn" :class="{ active: showExercise}" @click="navigate(2)">Exercise</button>
+                <button class="top-btn" :class="{ active: showNutrition}" @click="navigate(3)">Nutrition</button>
+                <button class="top-btn" :class="{ active: showWeight}" @click="navigate(4)">Weight</button>
+                <button class="top-btn" :class="{ active: showPayment}" @click="navigate(5)">Payment</button>
+                <button class="top-btn" :class="{ active: showEngagement}" style="border-top-right-radius:10px;border-bottom-right-radius:10px;" @click="navigate(6)">Engagement</button>
+            </div>
+            <div class="clients-top-actions d-flex align-items-center">
+                <div class="px-1 brds-2 clients-search-box">
                     <img src="/cms-assets/images/navbar-topbar/search.png" alt="" style="height:15px;">
-                    <input type="text" class="float-end border-0" style="font-size:12px;height:24px;" v-model="searchValue" placeholder="Search for a client">
+                    <input type="text" class="border-0 clients-search-input" v-model="searchValue" placeholder="Search for a client">
                 </div>
                 <div class="mx-2">
-                    <button @click="showfilters=true" style="border:none;background-color:transparent;padding-top:8px;">
+                    <button @click="showfilters=true" class="clients-filter-btn">
                         <img src="/cms-assets/images/master-libraries/filter.png" alt="" style="height:15px;" class="img-fluid">
                     </button>
                 </div>
             </div>
         </div>
         <div class="content mx-auto">
-            <div class="mx-auto" style="width:98%;height:50px;">
-                <!-- <button class="brds-1" style="height:25px;border:none;background-color:#F2A18C;font-size:13px;float:left;width:90px;margin: 10px 0px 0px 0px;">New</button> -->
-                <!-- <button class="tsl brds-1" style="height:25px;border:none;font-size:13px;float:left;margin: 10px 0px 0px 15px;width:100px;background-color:transparent;">Message</button> -->
+            <div class="mx-auto clients-toolbar">
                 <div class="dropdown float-start ms-2 " style="margin-top:1px;">
                     <button class="three-dots2 tsl brds-1 ms-1 position-relative" data-bs-toggle="dropdown" style="margin-top:9px;">
                         <img src="/cms-assets/images/master-libraries/three-dots.png" style="height:60%" alt="">
                     </button>
                     <ul class="dropdown-menu tsl">
                         <li><button class="dropdown-item" @click="addToGroup()">Add to Group</button></li>
-                        <!-- <li><button class="dropdown-item" @click="assignToTrainer()">Assign to</button></li> -->
                         <li><button class="dropdown-item" @click="ShowaddHabitPopup()">Add to Habit</button></li>
                         <li><button class="dropdown-item" @click="subscribeProgramPopup()">Subscribe to a program</button></li>
-                        <!-- <li><button class="dropdown-item">Add Sale</button></li> -->
-                        <!-- <li><button class="dropdown-item">Edit client</button></li> -->
-                        <!-- <li><button class="dropdown-item">Change training plans</button></li> -->
-                        <!-- <li><button class="dropdown-item">Change meal tracker</button></li> -->
-                        <!-- <li><button class="dropdown-item">Change calender visibility</button></li> -->
-                        <!-- <li><button class="dropdown-item">Copy setup link</button></li> -->
                     </ul>
                 </div>
-                <button @click.self="clientsDiv=!clientsDiv" class="mt-2" style="height:35px;width:235px;font-size:12px;color:#606060;background-color:white;position:relative;float:right;border:1px solid #C5C5C5;text-align:left;border-radius:10px;">{{btnValue}}
-                    <img src="/cms-assets/images/Clients/downarrow.png" style="position:absolute;height:7px;right:5px;top:13px;" >
-                    <div v-if="clientsDiv" class="tsl" style="position:absolute;width:98%;height:135px;z-index:9999;background-color:white;left:1%;border-radius:10px;font-size:12px;text-align:center;">
+                <button @click.self="clientsDiv=!clientsDiv" class="mt-2 clients-status-btn">{{btnValue}}
+                    <img src="/cms-assets/images/Clients/downarrow.png" class="clients-status-caret" >
+                    <div v-if="clientsDiv" class="tsl clients-status-menu">
                         <p @click="changebtn(0)" class="w-100 m-0 py-2" style="height:33px;cursor:pointer;">All Clients</p>
                         <p @click="changebtn(1)" class="w-100 m-0 py-2" style="height:33px;cursor:pointer;">Active Clients</p>
                         <p @click="changebtn(2)" class="w-100 m-0 py-2" style="height:33px;cursor:pointer;">Pending Clients</p>
@@ -78,7 +71,7 @@
                     </div>
                 </button>
             </div>
-            <div class="mx-auto" style="min-height:370px;width:98%;">
+            <div class="mx-auto clients-table-wrap">
                 <div class="for_data_table">
                     <summaryTable v-if="showSummary==true && showTable" ref="DataTable" :userData="tagsFilteredClients" :searchValue="searchValue"/>
                     <exerciseTable v-if="showExercise==true && showTable" ref="DataTable" :userData="tagsFilteredClients"  :searchValue="searchValue"/>
@@ -575,7 +568,6 @@ export default {
     border: 1px solid #E7E7E7;
     height: calc(100vh - 125px);
     border-radius: 15px;
-
 }
 
 .top {
@@ -585,34 +577,124 @@ export default {
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
     border: none;
-    align-content: center;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 12px 10px;
+}
+
+.clients-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    max-width: 100%;
+    padding-bottom: 2px;
+}
+
+.clients-top-actions {
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .top-btn {
-    margin-top: 10px;
+    margin-top: 4px;
     height: 30px;
     font-size: 13px;
     color: #343434ee;
     border: 1px solid #C5C5C5;
     border-left: none;
     background-color: #FFFFFF;
+    white-space: nowrap;
+    padding: 0 12px;
+    flex-shrink: 0;
+}
+
+.clients-search-box {
+    background-color: white;
+    border: 1px solid #C5C5C5;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.clients-search-input {
+    font-size: 12px;
+    height: 24px;
+    min-width: 140px;
+    outline: none;
+}
+
+.clients-filter-btn {
+    border: none;
+    background-color: transparent;
+    padding-top: 4px;
+}
+
+.clients-toolbar {
+    width: 98%;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.clients-status-btn {
+    height: 35px;
+    width: 235px;
+    max-width: 100%;
+    font-size: 12px;
+    color: #606060;
+    background-color: white;
+    position: relative;
+    border: 1px solid #C5C5C5;
+    text-align: left;
+    border-radius: 10px;
+    padding-right: 22px;
+}
+
+.clients-status-caret {
+    position: absolute;
+    height: 7px;
+    right: 5px;
+    top: 13px;
+}
+
+.clients-status-menu {
+    position: absolute;
+    width: 98%;
+    height: 135px;
+    z-index: 9999;
+    background-color: white;
+    left: 1%;
+    border-radius: 10px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.clients-table-wrap {
+    min-height: 370px;
+    width: 98%;
+}
+
+.for_data_table {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.for_data_table :deep(.vue3-easy-data-table) {
+    min-width: 720px;
 }
 
 .content {
     height: calc(100% - 58px);
     width: 99%;
     overflow-y: auto;
-}
-
-.btn3 {
-    background-color: #FFFFFF;
-    border: none;
-    width: 25px;
-    height: 25px;
-    float: left;
-    padding: 0px 0px 0px 4px;
-    margin: 10px 0px 0px 15px;
 }
 
 .three-dots2 {
@@ -624,32 +706,52 @@ export default {
     width: 25px;
 }
 
-/* .three-dots2:after {
-    cursor: pointer;
-    content: '\2807';
-    padding-left: 5px;
-} */
-
-.inpname {
-    width: 170px;
-    background-color: inherit;
-    font-size: 12px;
-    color: #343434;
-    border-color: #E7E7E7;
-    border-radius: 5px;
-    float: right;
-    margin: 10px 0px 0px 0px;
-    height: 25px;
-}
-
 .active {
     background-color: #F2A18C;
     border: none;
 }
 
+.clients-filter-panel {
+    width: 330px;
+    max-width: 100%;
+    height: 100vh;
+    background-color: white;
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}
+
+.clients-filter-body {
+    height: calc(100% - 165px);
+    overflow-y: auto;
+    text-align: center;
+}
+
+.filter-tag-dropdown {
+    width: 255px;
+    max-width: calc(100% - 8px);
+    height: 150px;
+    position: absolute;
+    top: 30px;
+    left: 2px;
+    z-index: 9999 !important;
+    background-color: white;
+    overflow-y: auto;
+}
+
+.filter-action-btn {
+    width: 180px;
+    max-width: 90%;
+    height: 40px;
+    border: none;
+    background-color: #F2A18C;
+    font-size: 16px;
+    color: #FFFFFF;
+}
+
 .filterBtn {
     height: 40px;
     width: 260px;
+    max-width: 90%;
     font-size: 16px;
     color: #F2A18C;
     text-align: center;
@@ -663,5 +765,105 @@ export default {
     right: 20px;
     top: 15px;
     height: 8px;
+}
+
+@media screen and (max-width: 992px) {
+    .main {
+        height: calc(100vh - 140px);
+        min-height: 480px;
+    }
+
+    .content {
+        height: calc(100% - 70px);
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .main {
+        height: auto;
+        min-height: calc(100vh - 150px);
+        border-radius: 12px;
+    }
+
+    .top {
+        padding: 8px 8px 10px;
+        gap: 10px;
+    }
+
+    .clients-tabs {
+        width: 100%;
+        order: 1;
+    }
+
+    .clients-top-actions {
+        width: 100%;
+        order: 2;
+        margin-left: 0;
+        justify-content: space-between;
+    }
+
+    .clients-search-box {
+        flex: 1;
+    }
+
+    .clients-search-input {
+        width: 100%;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .top-btn {
+        font-size: 12px;
+        padding: 0 10px;
+        height: 32px;
+    }
+
+    .clients-toolbar {
+        width: 100%;
+        padding: 0 4px;
+        flex-wrap: wrap;
+    }
+
+    .clients-status-btn {
+        width: min(235px, 100%);
+        margin-left: auto;
+    }
+
+    .clients-table-wrap {
+        width: 100%;
+        min-height: 300px;
+        padding-bottom: 16px;
+    }
+
+    .content {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+    }
+
+    .clients-filter-panel {
+        width: min(330px, 100vw);
+        border-radius: 20px 0 0 20px;
+    }
+
+    .filterBtn {
+        width: min(260px, 88%);
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .top-btn {
+        font-size: 11px;
+        padding: 0 8px;
+    }
+
+    .clients-status-btn {
+        width: 100%;
+        float: none;
+    }
+
+    .clients-toolbar {
+        align-items: flex-start;
+    }
 }
 </style>

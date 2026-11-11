@@ -1,15 +1,24 @@
 <template lang="">
     <div class="left-menu h-100" style="background-color: #eeeeee;border-radius:1rem;overflow:auto">
-        <div class="left-menu-head d-flex justify-content-around px-2 py-2"
+        <div class="left-menu-head d-flex justify-content-between align-items-center px-3 py-2"
             style="border-bottom: 1px solid rgb(177, 177, 177);">
             <div class="d-flex align-items-center">
-                <img v-show="!collapsedMenu" src="/cms-assets/images/navbar-topbar/logo.png" alt="logo" class="img-fluid" style="max-height:70px">
-                <img v-show="collapsedMenu" src="/cms-assets/images/navbar-topbar/logo2.png" alt="logo" class="img-fluid" >
+                <img v-show="!collapsedMenu || isMobileNav" src="/cms-assets/images/navbar-topbar/logo.png" alt="logo" class="img-fluid" style="max-height:70px">
+                <img v-show="collapsedMenu && !isMobileNav" src="/cms-assets/images/navbar-topbar/logo2.png" alt="logo" class="img-fluid" >
             </div>
             <div class="d-flex align-items-center menu-coll-btn">
                 <img @click="collapseToggle" src="/cms-assets/images/navbar-topbar/resizer.png" alt="menu-collapser"
                     class="img-fluid" style="max-height:15px;cursor:pointer;z-index:99999;">
             </div>
+            <button
+                v-if="isMobileNav"
+                type="button"
+                class="mobile-nav-close"
+                aria-label="Close navigation menu"
+                @click="$emit('closeMobileNav')"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
         <div class="left-menu-body" style="margin-top: 30px;">
             <div class="menu-list">
@@ -272,7 +281,11 @@
 <script>
 import config from "../config";
 export default {
-    props: ['logInProps'],
+    props: {
+        logInProps: { type: Object, default: () => ({}) },
+        isMobileNav: { type: Boolean, default: false },
+    },
+    emits: ['closeMobileNav'],
     data() {
         return {
             collapsedMenu: false,
@@ -282,6 +295,13 @@ export default {
     created() {
         this.checkWindow();
         window.addEventListener("resize", this.checkWindow);
+    },
+    watch: {
+        $route() {
+            if (this.isMobileNav) {
+                this.$emit('closeMobileNav');
+            }
+        }
     },
     methods: {
         ToggleMAster() {
@@ -301,6 +321,7 @@ export default {
                     Authorization: 'Bearer ' + token
                 }
             });
+            this.$emit('closeMobileNav');
             this.$router.push('/cms/login');
         },
         collapseToggle() {
@@ -357,5 +378,20 @@ p {
 }
 .flip-verticaly{
     transform: scaleY(-1);
+}
+
+.mobile-nav-close {
+    border: none;
+    background: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 18px;
+    color: #343434;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 </style>

@@ -1,13 +1,25 @@
 <template lang="">
     <div v-if="isCMS" class="d-flex main_app">
         <loaderVue v-if="loading" :loadingText="loaderText"/>
-        <div v-if="smallScreenNav" @click="toggleSideNav" class="position-fixed left-0 top-50" style="font-size:25px">></div>
-        <div @click.self="toggleSideNav" class="left-sec p-3 animate__animated animate__fadeInLeft" :class="{collapsedNav : collapsedNav, smallScreenNav:smallScreenNav, hiddenSideNav: hiddenSideNav}" v-if="BarsVisibilty">
-            <NavBar :logInProps="logInItems"/>
+        <div
+            @click.self="closeMobileNav"
+            class="left-sec p-3 animate__animated animate__fadeInLeft"
+            :class="{collapsedNav : collapsedNav, smallScreenNav:smallScreenNav, hiddenSideNav: hiddenSideNav, mobileNavOpen: smallScreenNav && !hiddenSideNav}"
+            v-if="BarsVisibilty">
+            <NavBar
+                :logInProps="logInItems"
+                :isMobileNav="smallScreenNav"
+                @closeMobileNav="closeMobileNav"
+            />
         </div>
         <div class="right-sec" :class="{full : !BarsVisibilty, collapsedNav : collapsedNav,smallScreenNav:smallScreenNav}">
             <div class="top-bar" v-if="BarsVisibilty">
-                <TopBar :logInProps="logInItems"/>
+                <TopBar
+                    :logInProps="logInItems"
+                    :showHamburger="smallScreenNav"
+                    :mobileNavOpen="smallScreenNav && !hiddenSideNav"
+                    @toggleMobileNav="toggleSideNav"
+                />
             </div>
             <div class="main-content container-fluid mb-3">
                 <router-view
@@ -89,9 +101,11 @@ export default {
         this.checkWindow();
         window.addEventListener("resize", this.checkWindow);
     },
-    // updated(){
-    //     this.checkWindow();
-    // },
+    watch: {
+        $route() {
+            this.closeMobileNav();
+        }
+    },
     methods: {
         getAllConvos(m) {
             if (m == 1) {
@@ -263,16 +277,28 @@ export default {
             if (this.BarsVisibilty) {
                 let size = window.innerWidth;
                 if (size < 992) {
-                    this.collapsedNav = false
-                    this.smallScreenNav = true
+                    this.collapsedNav = false;
+                    this.smallScreenNav = true;
                 }
                 else {
-                    this.smallScreenNav = false
+                    this.smallScreenNav = false;
+                    this.hiddenSideNav = true;
                 }
             }
         },
         toggleSideNav() {
             this.hiddenSideNav = !this.hiddenSideNav;
+            if (this.smallScreenNav && !this.hiddenSideNav) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        },
+        closeMobileNav() {
+            if (this.smallScreenNav) {
+                this.hiddenSideNav = true;
+                document.body.style.overflow = '';
+            }
         },
         collapseToggle() {
             this.collapsedNav = !this.collapsedNav;
@@ -281,9 +307,11 @@ export default {
             this.smallScreenNav = false
             this.collapsedNav = false;
             this.BarsVisibilty = false;
+            document.body.style.overflow = '';
         },
         showBars() {
             this.BarsVisibilty = true;
+            this.checkWindow();
         },
         checkAdmin() {
             const token = config.storage.getItem('fwd_session_token');
@@ -334,7 +362,9 @@ export default {
 
 @media screen and (max-width:576px) {
     .main-content {
-        margin-top: 150px !important;
+        margin-top: 130px !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
     }
 }
 
@@ -403,25 +433,40 @@ export default {
     margin: 0 !important;
 }
 
+.main_app .right-sec.smallScreenNav .top-bar {
+    width: 100%;
+    left: 0;
+}
+
 /*-----------------------------setting fixed position navbar----------------- */
 
 .main_app .left-sec.smallScreenNav {
     position: fixed;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.575);
-    z-index: 99;
+    background-color: rgba(0, 0, 0, 0.55);
+    z-index: 120;
+    padding: 0 !important;
+    top: 0;
+    left: 0;
 }
 
-.main_app .left-sec.smallScreenNav>* {
-    width: 250px;
+.main_app .left-sec.smallScreenNav > * {
+    width: min(280px, 85vw);
+    height: 100%;
+    border-radius: 0 1rem 1rem 0 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
 }
 
 .main_app .left-sec.smallScreenNav .menu-coll-btn {
     display: none !important;
 }
 
-.smallScreenNav.hiddenSideNav {
+.main_app .left-sec.smallScreenNav.hiddenSideNav {
     display: none;
+}
+
+.main_app .left-sec.mobileNavOpen {
+    display: block;
 }
 </style>
