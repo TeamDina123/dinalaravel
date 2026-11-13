@@ -10,7 +10,8 @@ class StoreSubscriptionProducts
 
     private const LABELS = [
         self::ESSENTIAL => 'Essential',
-        self::PREMIUM => 'Premium',
+        // Product id is fwd_basic_plan — show as Basic for coaches (not "Premium").
+        self::PREMIUM => 'Basic',
         self::VIP => 'VIP Coaching',
     ];
 

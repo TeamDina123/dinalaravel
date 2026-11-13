@@ -23,6 +23,14 @@ class SubscriptionAccess
             ->latest('id')->first();
     }
 
+    public static function latestStore(int $userId): ?StoreSubscription
+    {
+        return StoreSubscription::where('user_id', $userId)
+            ->orderByDesc('verified_at')
+            ->orderByDesc('id')
+            ->first();
+    }
+
     public static function isActive(int $userId): bool
     {
         if (self::activeStore($userId) || self::activeLegacy($userId)) {
@@ -36,47 +44,73 @@ class SubscriptionAccess
 
     /**
      * Package summary for CMS (messages, client profile).
-     * VIP Coaching can use private chat replies; Essential/Premium cannot.
+     * VIP Coaching / legacy full_access can reply; Essential/Basic cannot.
      */
     public static function packageSummary(int $userId): array
     {
+        $storeActive = self::activeStore($userId);
+        $legacyActive = self::activeLegacy($userId);
         $active = self::isActive($userId);
-        $store = self::activeStore($userId);
-        $legacy = self::activeLegacy($userId);
 
         $packageLabel = null;
         $productId = null;
         $tier = null;
         $canReply = false;
         $source = 'none';
+        $statusNote = null;
 
-        if ($store) {
-            $productId = $store->product_id;
+        if ($storeActive) {
+            $productId = $storeActive->product_id;
             $packageLabel = StoreSubscriptionProducts::label($productId);
             $tier = StoreSubscriptionProducts::tier($productId);
-            $canReply = $active && StoreSubscriptionProducts::hasPrivateCoaching($productId);
+            $canReply = StoreSubscriptionProducts::hasPrivateCoaching($productId);
             $source = 'store';
-        } else {
-            $legacySub = null;
-            if ($legacy) {
-                $legacySub = Subscription::find($legacy->sub_id);
-            }
-            if (!$legacySub) {
-                $detailSubId = UserDetail::where('user_id', $userId)->value('subscription');
-                if ($detailSubId) {
-                    $legacySub = Subscription::find($detailSubId);
-                }
-            }
+            $statusNote = 'active';
+        } elseif ($legacyActive) {
+            $legacySub = Subscription::find($legacyActive->sub_id);
             if ($legacySub) {
                 $packageLabel = $legacySub->name;
-                $canReply = $active && ($legacySub->access_type === 'full_access');
+                $canReply = $legacySub->access_type === 'full_access';
                 $tier = $legacySub->access_type;
                 $source = 'legacy';
+                $statusNote = 'active';
+            }
+        } else {
+            // Not currently active — still show what they bought / were assigned.
+            $latestStore = self::latestStore($userId);
+            if ($latestStore) {
+                $productId = $latestStore->product_id;
+                $packageLabel = StoreSubscriptionProducts::label($productId);
+                $tier = StoreSubscriptionProducts::tier($productId);
+                $source = 'store';
+                $statusNote = self::storeStatusNote($latestStore);
+                $packageLabel = $packageLabel . ' (' . $statusNote . ')';
+                $canReply = false;
+            } else {
+                $detail = UserDetail::where('user_id', $userId)->first(['subscription', 'subscription_status']);
+                $detailSubId = (int) ($detail->subscription ?? 0);
+                if ($detailSubId > 0) {
+                    $legacySub = Subscription::find($detailSubId);
+                    if ($legacySub) {
+                        $packageLabel = $legacySub->name;
+                        $tier = $legacySub->access_type;
+                        $source = 'legacy';
+                        $statusNote = ($detail->subscription_status === 'active' && $active)
+                            ? 'active'
+                            : 'inactive';
+                        if ($statusNote !== 'active') {
+                            $packageLabel = $packageLabel . ' (inactive)';
+                        }
+                        $canReply = false;
+                    }
+                }
             }
         }
 
         if (!$packageLabel) {
-            $packageLabel = $active ? 'Active (unlabeled)' : 'No package';
+            // Truly nothing on file: signed up / using app without a paid plan linked.
+            $packageLabel = 'No package';
+            $statusNote = 'none';
         }
 
         return [
@@ -84,9 +118,24 @@ class SubscriptionAccess
             'package_product_id' => $productId,
             'package_tier' => $tier,
             'subscription_active' => $active,
-            'can_reply' => $canReply,
-            'can_reply_label' => $canReply ? 'Can reply to messages' : 'Cannot reply to messages',
+            'can_reply' => $active && $canReply,
+            'can_reply_label' => ($active && $canReply)
+                ? 'Can reply to messages'
+                : 'Cannot reply to messages',
             'package_source' => $source,
+            'package_status' => $statusNote,
         ];
+    }
+
+    private static function storeStatusNote(StoreSubscription $store): string
+    {
+        if ($store->status === 'active' && $store->expires_at && $store->expires_at->isPast()) {
+            return 'expired';
+        }
+        if ($store->status === 'active') {
+            return 'inactive';
+        }
+
+        return $store->status ?: 'inactive';
     }
 }
