@@ -1,30 +1,35 @@
 <template lang="">
-    <div style="padding-top: 1em !important;
-    background-color: #fff;
-    padding-left: 0.6em;
-    padding-right: 0.6em;">
-        <div class="top_bar w-100" style="background-color: #eeeeee ;border-radius:1rem; padding-top: 18px;
-    padding-left: 25px;
-    padding-right: 18px;
-    padding-bottom: 18px;
-    margin-bottom: 15px;">
-            <div class="d-flex bar">
-                <div class="w-100">
+    <div class="topbar-wrap">
+        <div class="top_bar w-100">
+            <div class="d-flex bar align-items-center">
+                <button
+                    v-if="showHamburger"
+                    type="button"
+                    class="hamburger-btn"
+                    :class="{ open: mobileNavOpen }"
+                    aria-label="Toggle navigation menu"
+                    @click="$emit('toggleMobileNav')"
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="search-wrap flex-grow-1">
                     <div class="position-relative w-100">
-                        <input @focusin="clientsDiv=true" @focusout="clientsDiv=false" type="text" v-model="search" placeholder="Find a Client" style="min-width:280px;">
-                        <img src="/cms-assets/images/navbar-topbar/search.png" alt="search-icon" class="img-fluid position-absolute">
-                        <div v-show="clientsDiv" class="position-absolute brds-3 shd_card p-0" style="top:50px ;background-color:white;max-height:200px;width:100%;z-index:9999!important;overflow-y:auto;">
-                            <div class="w-100 d-flex justify-content-between client px-3 py-1" style="height:30px;" @mousedown="openClientProfile(items.id)" v-for="(items, index) in filteredClient" :key="index">
-                                <p>{{items.full_name}}</p>
-                                <p>{{items.subscription}}</p>
+                        <input @focusin="clientsDiv=true" @focusout="clientsDiv=false" type="text" v-model="search" placeholder="Find a Client" class="client-search-input">
+                        <img src="/cms-assets/images/navbar-topbar/search.png" alt="search-icon" class="img-fluid position-absolute search-icon">
+                        <div v-show="clientsDiv" class="position-absolute brds-3 shd_card p-0 client-search-results">
+                            <div class="w-100 d-flex justify-content-between client px-3 py-1" style="min-height:30px;" @mousedown="openClientProfile(items.id)" v-for="(items, index) in filteredClient" :key="index">
+                                <p class="mb-0 text-truncate pe-2">{{items.full_name}}</p>
+                                <p class="mb-0 flex-shrink-0">{{items.subscription}}</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="d-flex justify-content-center mx-3 mt-2 mt-sm-0" style="position: relative;">
+                <div class="d-flex justify-content-center topbar-actions" style="position: relative;">
                     <div class="d-flex border-end border-secondary">
-                        <div class="bg-white rounded-circle border me-2 position-relative" style="padding: 8px 11px;width:45px;height:45px">
-                            <span v-if="unread_count!==0&&unread_count!==null" class="position-absolute prim_bg rounded-circle" style="top:-4px;right:-4px;height:18px;width:18px;color:white;text-align:center;font-size:12px;">{{unread_count}}</span>
+                        <div class="bg-white rounded-circle border me-2 position-relative notify-btn">
+                            <span v-if="unread_count!==0&&unread_count!==null" class="position-absolute prim_bg rounded-circle unread-badge">{{unread_count}}</span>
                             <img @click="toggleNotify" src="/cms-assets/images/navbar-topbar/NotificationBell.png" alt="noti" class="img-fluid" style="cursor: pointer;">
                         </div>
                     </div>
@@ -81,7 +86,7 @@
                                 <p @click="markAllRead" style="font-size: 8px; font-weight: bold; margin-bottom: 10px;cursor:pointer;">Mark all read</p>
                             </div>
                             <div style="overflow: auto;">
-                                <div v-for="item of NotificationArray" :class="{'unread': item.status==0}" style="display: flex; margin-top: 15px; border: 1px solid #EDEDED; padding: 5px; border-radius: 8px;">
+                                <div v-for="item of NotificationArray" :key="item.id || item.title" :class="{'unread': item.status==0}" style="display: flex; margin-top: 15px; border: 1px solid #EDEDED; padding: 5px; border-radius: 8px;">
                                    <div class="col-9" style="display: flex;">
                                        <img :src="item.userImage" alt="" class="img-fluid rounded-circle" style="height:25px;width:25px; margin-right: 5px;">
                                        <div>
@@ -90,18 +95,17 @@
                                        </div>
                                    </div>
                                    <div class="col-3 d-flex flex-column">
-                                       <!-- <i class="fa-solid fa-ellipsis ms-auto"></i> -->
                                        <span class="h8">{{item.timeDiff}}</span>
                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex position-relative justify-content-center">
-                        <div class="prof-img" style="width:45px;height:45px; margin-right: 10px;margin-left: 10px;">
-                            <img :src="logInProps.image" style="width:40px;height:40px;border-radius:50%;margin-right: 15px;">
+                    <div class="d-flex position-relative justify-content-center align-items-center">
+                        <div class="prof-img">
+                            <img :src="logInProps.image" alt="profile">
                         </div>
-                        <div class="dropdown">
+                        <div class="dropdown profile-dropdown">
                             <div class="prof-name" style="cursor: pointer;" data-bs-toggle="dropdown" aria-expanded="false" >
                                 <h3 class="d-flex align-items-center mb-0 profile-name-heading">
                                     <strong class="profile-name-text">{{logInProps.name}}</strong>
@@ -109,20 +113,11 @@
                                 </h3>
                                 <p class="mb-0 profile-role">{{logInProps.role}}</p>
                             </div>
-                            <!-- <button class="py-1 border-0" type="button" id="dropdownMenuButton1"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                            </button> -->
                             <ul class="tsl dropdown-menu border-0" aria-labelledby="dropdownMenuButton1">
                                 <li class="py-2"><button class="dropdown-item" style="text-align: center;" @click="this.$router.push('/cms/profile')"><img src="/cms-assets/images/G55730.png" alt="" class="img-fluid me-3" style="max-height:25px">Profile</button></li>
                                 <li class="py-2"><button class="dropdown-item" style="text-align: center;" @click="logout"><img src="/cms-assets/images/G55730.png" alt="" class="img-fluid me-3" style="max-height:25px">Logout</button></li>
                             </ul>
                         </div>
-                        <!-- <div class="position-absolute shd_card prof-opt" v-show="profMenu">
-                            <div>
-                                <button @click="this.$router.push('/cms/profile')"><img src="/cms-assets/images/Group55752.png" alt="" class="img-fluid me-3" style="max-height:25px">Profile</button>
-                                <button @click="logout"><img src="/cms-assets/images/G55730.png" alt="" class="img-fluid me-3" style="max-height:25px">Logout</button>
-                            </div>
-                        </div> -->
                     </div>
                 </div>
             </div>
@@ -137,7 +132,12 @@ import config from '../config';
 import clientPopup from '../components/clients/clientPopup.vue'
 export default {
     components: { clientPopup },
-    props: ['logInProps'],
+    props: {
+        logInProps: { type: Object, default: () => ({}) },
+        showHamburger: { type: Boolean, default: false },
+        mobileNavOpen: { type: Boolean, default: false },
+    },
+    emits: ['toggleMobileNav'],
     data() {
         return {
             apiConfig: {
@@ -237,6 +237,124 @@ export default {
 }
 </script>
 <style scoped>
+.topbar-wrap {
+    padding-top: 1em;
+    background-color: #fff;
+    padding-left: 0.6em;
+    padding-right: 0.6em;
+}
+
+.top_bar {
+    background-color: #eeeeee;
+    border-radius: 1rem;
+    padding: 14px 18px;
+    margin-bottom: 15px;
+}
+
+.hamburger-btn {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 42px;
+    height: 42px;
+    margin-right: 10px;
+    padding: 10px 9px;
+    border: none;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.hamburger-btn span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: #343434;
+    border-radius: 2px;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.hamburger-btn.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+
+.hamburger-btn.open span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-btn.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+.search-wrap {
+    min-width: 0;
+}
+
+.client-search-input {
+    background-color: white;
+    border: 1px solid rgb(167, 166, 166);
+    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    border-radius: 10px;
+    width: 100%;
+    min-width: 0;
+}
+
+.client-search-input:focus {
+    outline: none;
+}
+
+.search-icon {
+    max-height: 17px;
+    top: 12px;
+    left: 10px;
+}
+
+.client-search-results {
+    top: 50px;
+    background-color: white;
+    max-height: 200px;
+    width: 100%;
+    z-index: 9999 !important;
+    overflow-y: auto;
+}
+
+.topbar-actions {
+    margin-left: 12px;
+    flex-shrink: 0;
+}
+
+.notify-btn {
+    padding: 8px 11px;
+    width: 45px;
+    height: 45px;
+}
+
+.unread-badge {
+    top: -4px;
+    right: -4px;
+    height: 18px;
+    width: 18px;
+    color: white;
+    text-align: center;
+    font-size: 12px;
+}
+
+.prof-img {
+    width: 45px;
+    height: 45px;
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+.prof-img img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
 .unread {
     background-color: rgb(240, 240, 240);
     position: relative;
@@ -251,42 +369,6 @@ export default {
     position: absolute;
     top: 8px;
     right: 4px;
-}
-
-input {
-    background-color: white;
-    border: 1px solid rgb(167, 166, 166);
-    padding: 0.5rem 1rem 0.5rem 2.5rem;
-    border-radius: 10px;
-    width: 100%;
-}
-
-input:focus {
-    outline: none;
-}
-
-img.position-absolute {
-    max-height: 17px;
-    top: 12px;
-    left: 10px;
-}
-
-.prof-opt button {
-    background: transparent;
-    border: none;
-    color: black;
-    padding: 5px 10px;
-    margin-bottom: 10px;
-}
-
-.prof-opt button:hover {
-    color: #f2a18c;
-}
-
-.prof-opt {
-    width: 170px;
-    top: 50px;
-    right: -10px;
 }
 
 .profile-name-heading {
@@ -315,12 +397,12 @@ img.position-absolute {
     top: 48px;
     background-color: #fff;
     padding: 17px;
-    right: 200px;
+    right: 0;
     box-shadow: 0 0 10px 0px #f2a18c;
-    width: 350px;
+    width: min(350px, calc(100vw - 24px));
     border-radius: 16px;
     overflow: auto;
-    height: 500px;
+    height: min(500px, 70vh);
     z-index: 9;
 }
 
@@ -333,9 +415,52 @@ img.position-absolute {
     cursor: pointer;
 }
 
-@media screen and (max-width: 580px) {
-    .bar {
-        flex-wrap: wrap;
+@media screen and (max-width: 768px) {
+    .topbar-wrap {
+        padding-top: 0.6em;
+        padding-left: 0.4em;
+        padding-right: 0.4em;
+    }
+
+    .top_bar {
+        padding: 10px 12px;
+        margin-bottom: 10px;
+    }
+
+    .profile-dropdown {
+        display: none;
+    }
+
+    .prof-img {
+        margin-right: 0;
+        margin-left: 6px;
+    }
+
+    .topbar-actions {
+        margin-left: 8px;
+    }
+
+    .notify-btn {
+        width: 40px;
+        height: 40px;
+        padding: 7px 9px;
+    }
+
+    .notify {
+        right: -10px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .hamburger-btn {
+        width: 38px;
+        height: 38px;
+        margin-right: 8px;
+    }
+
+    .client-search-input {
+        font-size: 13px;
+        padding: 0.45rem 0.75rem 0.45rem 2.2rem;
     }
 }
 </style>
