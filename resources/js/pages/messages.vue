@@ -22,8 +22,8 @@
     <Loader v-if="pageLoading" :loadingText="loadingText"/>
     <GetInput v-if="firstMsgVisi" :msgTitle="firstMsgTitle" :msgDetail="firstMsgDetail"/>
     <div v-if="tagsDiv" style="position:fixed;height:100vh;width:100vw;top:0;left:0;z-index:98" @click="tagsDiv=false"></div>
-    <div style="display: flex">
-        <div class="d-flex w-100 msgs-box">
+    <div class="messages-page">
+        <div class="d-flex w-100 msgs-box" :class="{ 'mobile-convo-open': chatProps.active !== null }">
             <div class="chats-side">
                 <div class="chats-head p-2">
                     <div class="position-relative">
@@ -37,19 +37,6 @@
                             <option value="archived">Archived Messages</option>
                         </select>
                     </div>
-                    <!-- <div class="d-flex justify-content-center w-100 mt-3 ch-opt">
-                        <button @click="newChatCompVisib = true" class="prim_btn py-1 h7">New</button>
-                        <button class="trans_bg py-1 h7">Archive</button>
-                        <div class="dropdown">
-                            <button class="trans_btn px-2 py-1 h7 border-0 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                More
-                            </button>
-                            <ul class="tsl dropdown-menu border-0">
-                                <li><button class="dropdown-item">Mark All Read</button></li>
-                                <li><button class="dropdown-item">Archive All</button></li>
-                            </ul>
-                        </div>
-                    </div> -->
                     <div class="mt-2">
                         <button @click="newChatCompVisib = true" class="prim_btn py-1 h7 w-100 brds-1">New</button>
                     </div>
@@ -58,95 +45,85 @@
                     <div v-if="chatProps.convos.length==0" class="mt-3 text-center">
                         <p>No Chat Yet</p>
                     </div>
-                    <div v-for="chatSingle in filteredMessages">
+                    <div v-for="chatSingle in filteredMessages" :key="chatSingle.id">
                         <ChatItem :chatData="chatSingle"/>
                     </div>
                 </div>
             </div>
             <div class="convo-side">
-                <div v-if="chatProps.active===null" class="h-100" style="overflow-y:auto">
+                <div v-if="chatProps.active===null" class="h-100 desktop-empty-state" style="overflow-y:auto">
                     <div class="d-flex justify-content-center align-items-center h-100">
-                        <div>
+                        <div class="px-3">
                             <img src="/cms-assets/images/no-message.png" alt="" class="img-fluid d-block mx-auto" style="max-height:250px">
                             <div class="mt-3 text-center">
                                 <h5 class="mb-2"><strong>Select a message thread to view</strong></h5>
-                                <p class="mb-0 text-muted">Stay connected with your clients and fellow team <br>members with one-to-one or group private messages</p>
+                                <p class="mb-0 text-muted">Stay connected with your clients and fellow team members with one-to-one or group private messages</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div v-if="chatProps.active!==null" class="h-100">
-                    <div class="convo-head p-3 d-flex justify-content-between">
-                        <div class="d-flex pointer">
-                            <button type="button" class="trans_btn px-2 align-self-center" @click="openClientProfile" :aria-label="'View profile for ' + chatProps.active.user_name">
+                <div v-if="chatProps.active!==null" class="h-100 d-flex flex-column">
+                    <div class="convo-head p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center flex-grow-1 min-w-0">
+                            <button type="button" class="mobile-back-btn trans_btn me-1" @click="closeMobileConvo" aria-label="Back to message list">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <button type="button" class="trans_btn px-2 align-self-center flex-shrink-0" @click="openClientProfile" :aria-label="'View profile for ' + chatProps.active.user_name">
                                 <img :src="chatProps.active.image" alt="" class="rounded-circle" style="width:40px;height:40px"/>
                             </button>
-                            <div>
+                            <div class="min-w-0">
                                 <div>
-                                    <button type="button" class="trans_btn h7 mb-0 p-0 text-capitalize" @click="openClientProfile"><strong>{{chatProps.active.user_name}}</strong></button>
-                                    <!-- <p class="h8 mb-0">Active 5 minutes ago</p> -->
+                                    <button type="button" class="trans_btn h7 mb-0 p-0 text-capitalize text-truncate d-inline-block" style="max-width:100%" @click="openClientProfile"><strong>{{chatProps.active.user_name}}</strong></button>
                                 </div>
                                 <div class="position-relative">
                                     <p style="color: #f2a18c" class="h8 mb-0 float-start">{{chatProps.active.sub}}</p>
                                     <p @click="tagsDiv=!tagsDiv" style="color: #f2a18c" class="h8 mb-0 ms-3 float-start position-relative">View Tags</p>
-                                    <div v-if="tagsDiv" class="tsl brds-2 position-absolute p-2" style="max-height:100px;width:200px;background-color:white;z-index:99;overflow-y:auto;top:20px;left:55px;">
+                                    <div v-if="tagsDiv" class="tsl brds-2 position-absolute p-2 tags-dropdown">
                                         <p v-if="clientsTags.names.length>0" v-for="(item, index) in clientsTags.names" :key="index" class="px-2 float-start m-1" style="background-color:#F2A18C;border-radius:20px;font-size:13px;">{{item}}</p>
                                         <p v-else class="mb-0">No tags assigned</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- <div class="align-self-center">
-                            <div class="ms-2 dropdown">
-                                <button class="prim_hvr trans_btn px-2" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fa-solid fa-ellipsis"></i>
-                                </button>
-                                <ul class="tsl dropdown-menu border-0">
-                                    <li><button class="dropdown-item">Delete</button></li>
-                                    <li><button class="dropdown-item">Archive</button></li>
-                                    <li><button class="dropdown-item">Media</button></li>
-                                </ul>
-                            </div>
-                        </div> -->
                     </div>
-                    <div class="convo-content">
+                    <div class="convo-content flex-grow-1">
                         <div class="d-flex flex-column justify-content-end h-100">
-                            <div id="messageDiv" style="overflow-y: auto;" class="px-4 pb-4" ref="scrollable">
-                                <MsgItem v-for="msg in chatProps.messages" :msgdet="msg" :logInDetails="logInProps"/>
+                            <div id="messageDiv" class="px-3 px-md-4 pb-4 message-scroll" ref="scrollable">
+                                <MsgItem v-for="msg in chatProps.messages" :key="msg.id" :msgdet="msg" :logInDetails="logInProps"/>
                             </div>
                         </div>
                     </div>
-                    <div class="convo-type" style="border-top:1px solid #dbdbdb">
-                        <div class="w-70" style="border-right:1px solid #dbdbdb">
+                    <div class="convo-type">
+                        <div class="convo-type-input">
                             <textarea type="text" rows="1" class="w-100"
                             @keyup.exact.enter="checkKey('send')"
                             @keyup.exact.enter.shift="checkKey('break')"
-                            placeholder="Type a message here. Shift-Enter for a new line."
+                            placeholder="Type a message..."
                             v-model="newMessage"></textarea>
                         </div>
-                        <div class="me-4 d-flex align-items-center">
-                            <button class="trans_btn position-relative">
-                                <img @click="toogleEmojiPicker" style="max-height:25px" src="/cms-assets/images/Shape.png" class="img-fluid">
+                        <div class="convo-type-actions d-flex align-items-center">
+                            <button class="trans_btn position-relative" type="button">
+                                <img @click="toogleEmojiPicker" style="max-height:25px" src="/cms-assets/images/Shape.png" class="img-fluid" alt="emoji">
                                 <EmojiPicker v-if="emojiPicker"/>
                             </button>
-                            <button @click="openImageInput()" class="trans_btn">
-                                <img style="max-height:25px" src="/cms-assets/images/image.png" class="img-fluid">
+                            <button @click="openImageInput()" class="trans_btn" type="button">
+                                <img style="max-height:25px" src="/cms-assets/images/image.png" class="img-fluid" alt="image">
                             </button>
                             <input @change="getImageFile()" type="file" accept=".jpg, .png, .jpeg" class="d-none" ref="imageFileRef">
-                            <button @click="openVideoInput()" class="trans_btn">
-                                <img style="max-height:25px" src="/cms-assets/images/video.png" class="img-fluid">
+                            <button @click="openVideoInput()" class="trans_btn" type="button">
+                                <img style="max-height:25px" src="/cms-assets/images/video.png" class="img-fluid" alt="video">
                             </button>
                             <input @change="getVideoFile()" type="file" accept=".mp4, .mkv, .mov, .m4v" class="d-none" ref="videoFileRef">
-                            <button @click="openDocInput()" class="trans_btn">
-                                <img style="max-height:25px" src="/cms-assets/images/document.png" class="img-fluid">
+                            <button @click="openDocInput()" class="trans_btn" type="button">
+                                <img style="max-height:25px" src="/cms-assets/images/document.png" class="img-fluid" alt="document">
                             </button>
                             <input @change="getDocFile()" type="file" accept=".docx,.pdf,.txt,.doc" class="d-none" ref="docFileRef">
-                            <button class="trans_btn" @click="openVoiceTargetModal()">
-                                <img style="max-height:25px" src="/cms-assets/images/audio.png" class="img-fluid">
+                            <button class="trans_btn" type="button" @click="openVoiceTargetModal()">
+                                <img style="max-height:25px" src="/cms-assets/images/audio.png" class="img-fluid" alt="audio">
                             </button>
                             <input @change="getAudioFile()" type="file" accept=".mp3,.wav,.m4a,.webm,.ogg,.aac,audio/*" class="d-none" ref="audioFileRef">
-                            <button @click="sendTextMessage()" class="trans_btn">
-                                <img style="max-height:35px" src="/cms-assets/images/send.png" class="img-fluid">
+                            <button @click="sendTextMessage()" class="trans_btn" type="button">
+                                <img style="max-height:35px" src="/cms-assets/images/send.png" class="img-fluid" alt="send">
                             </button>
                         </div>
                     </div>
@@ -265,6 +242,11 @@ export default {
                 this.modalDetail = er.message;
                 this.informModal = true;
             })
+        },
+        closeMobileConvo() {
+            this.tagsDiv = false;
+            this.emojiPicker = false;
+            this.chatProps.active = null;
         },
         sendFirstMessage(msgToSend) {
             const postData = {
@@ -563,11 +545,22 @@ export default {
 };
 </script>
 <style scoped>
+.messages-page {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.min-w-0 {
+    min-width: 0;
+}
+
 textarea {
     border: none;
     padding-top: 12px;
-    padding-left: 20px;
+    padding-left: 16px;
     padding-bottom: 10px;
+    resize: none;
 }
 
 .chats-side {
@@ -577,20 +570,20 @@ textarea {
     border-right: 1px solid rgb(228, 228, 228);
     overflow: auto;
     width: 270px;
+    flex-shrink: 0;
 }
 
 .convo-side {
     width: calc(100% - 270px);
-}
-
-.none {
-    display: none;
+    min-width: 0;
+    background: #fff;
 }
 
 .msgs-box {
     border: 1px solid rgb(228, 228, 228);
     border-radius: 1rem;
     height: calc(100vh - 127px);
+    overflow: hidden;
 }
 
 .chats-head input,
@@ -621,6 +614,7 @@ textarea {
 
 .convo-head {
     border-bottom: 1px solid gainsboro;
+    flex-shrink: 0;
 }
 
 .convo-head img {
@@ -629,15 +623,59 @@ textarea {
     border-radius: 50%;
 }
 
+.mobile-back-btn {
+    display: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.tags-dropdown {
+    max-height: 100px;
+    width: 200px;
+    max-width: calc(100vw - 48px);
+    background-color: white;
+    z-index: 99;
+    overflow-y: auto;
+    top: 20px;
+    left: 0;
+}
+
 .convo-content {
     height: calc(100% - 125px);
+    min-height: 0;
+}
+
+.message-scroll {
+    overflow-y: auto;
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
 }
 
 .convo-type {
     display: flex !important;
     justify-content: space-between !important;
-    /*overflow-y: hidden;*/
     align-items: center;
+    border-top: 1px solid #dbdbdb;
+    flex-shrink: 0;
+    gap: 4px;
+    padding-right: 4px;
+}
+
+.convo-type-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border-right: 1px solid #dbdbdb;
+}
+
+.convo-type-actions {
+    flex: 0 0 auto;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 6px;
 }
 
 .convo-type input {
@@ -664,5 +702,73 @@ textarea {
     border-top-right-radius: 5px;
     border-bottom-right-radius: 5px;
     border-left: 0;
+}
+
+@media screen and (max-width: 991.98px) {
+    .msgs-box {
+        height: calc(100dvh - 150px);
+        min-height: 420px;
+        border-radius: 12px;
+    }
+
+    .chats-side,
+    .convo-side {
+        width: 100%;
+        border-radius: 12px;
+        border-right: none;
+    }
+
+    .msgs-box:not(.mobile-convo-open) .convo-side {
+        display: none;
+    }
+
+    .msgs-box.mobile-convo-open .chats-side {
+        display: none;
+    }
+
+    .mobile-back-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .convo-content {
+        height: auto;
+        flex: 1 1 auto;
+    }
+
+    .convo-type {
+        flex-wrap: wrap;
+    }
+
+    .convo-type-input {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #dbdbdb;
+    }
+
+    .convo-type-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .desktop-empty-state {
+        display: none !important;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .msgs-box {
+        height: calc(100dvh - 145px);
+    }
+
+    .convo-head {
+        padding: 10px 8px !important;
+    }
+
+    .message-scroll {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
 }
 </style>

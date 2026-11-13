@@ -356,15 +356,44 @@ export default {
 }
 </script>
 <style>
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.main_app {
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
 .main-content {
     margin-top: 110px !important;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Keep wide tables usable without breaking the page shell */
+.main-content .table-responsive,
+.main-content .for_data_table,
+.main-content .vue3-easy-data-table__main {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media screen and (max-width:991.98px) {
+    .main-content {
+        margin-top: 125px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
 }
 
 @media screen and (max-width:576px) {
     .main-content {
-        margin-top: 130px !important;
-        padding-left: 10px !important;
-        padding-right: 10px !important;
+        margin-top: 120px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
     }
 }
 

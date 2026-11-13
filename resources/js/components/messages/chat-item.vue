@@ -3,15 +3,15 @@
         <div class="w-20 px-1 text-center">
             <img :src="chatData.image" alt="" class="rounded-circle" style="height:35px;width:35px">
         </div>
-        <div  @click="openChat(chatData)" class="w-80 pointer">
+        <div  @click="openChat(chatData)" class="w-80 pointer chat-item-body">
             <div class="d-flex justify-content-between">
-                <div>
-                    <p class="h7 mb-0">
+                <div class="min-w-0 pe-3">
+                    <p class="h7 mb-0 text-truncate">
                         <strong class="text-capitalize">{{chatData.user_name}}</strong>
-                        <span class="ms-3 badge bg-danger rounded-circle" v-if="chatData.unread!==0&&badgeShow==true">{{chatData.unread}}</span>
+                        <span class="ms-2 badge bg-danger rounded-circle" v-if="chatData.unread!==0&&badgeShow==true">{{chatData.unread}}</span>
                     </p>
-                    <p v-if="chatData.last_type==='text'" class="h8 mb-0 text-muted">{{chatData.last_message}}</p>
-                    <p v-else class="h8 mb-0 text-muted text-capitalize">- {{chatData.last_type}}</p>
+                    <p v-if="chatData.last_type==='text'" class="h8 mb-0 text-muted text-truncate">{{chatData.last_message}}</p>
+                    <p v-else class="h8 mb-0 text-muted text-capitalize text-truncate">- {{chatData.last_type}}</p>
                 </div>
             </div>
         </div>
@@ -57,5 +57,19 @@ export default {
 <style scoped>
 .chat-item {
     border-bottom: 1px solid rgb(192, 192, 192);
+}
+
+.chat-item-body {
+    min-width: 0;
+}
+
+.min-w-0 {
+    min-width: 0;
+}
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>

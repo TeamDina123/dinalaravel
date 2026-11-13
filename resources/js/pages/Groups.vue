@@ -21,8 +21,8 @@
     <Loader v-if="pageLoading" :loadingText="loadingText"/>
     <!-- <groupMembersVue v-if="groupMemberAdd" :groupId="idForAction"/> -->
     <!-- <GetInput v-if="false" :msgTitle="modalTitle" :msgDetail="modalDetail"/> -->
-    <div style="display: flex">
-        <div class="d-flex w-100 msgs-box" >
+    <div class="groups-page">
+        <div class="d-flex w-100 msgs-box" :class="{ 'mobile-convo-open': groupProps.active !== null }">
             <div class="chats-side">
                 <div class="chats-head p-2">
                     <div class="position-relative">
@@ -30,27 +30,9 @@
                         <img src="/cms-assets/images/navbar-topbar/search.png" alt="search-icon"
                             class="img-fluid position-absolute" />
                     </div>
-                    <!-- <div class="mt-2">
-                        <select name="" id="">
-                            <option value="">Active Messages</option>
-                        </select>
-                    </div> -->
-                    <!-- <div class="d-flex justify-content-center w-100 mt-3 ch-opt">
-                        <button @click="newChatCompVisib = true" class="prim_btn py-1 h7">New</button>
-                        <button class="trans_bg py-1 h7">Archive</button>
-                        <div class="dropdown">
-                            <button class="trans_btn px-2 py-1 h7 border-0 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                More
-                            </button>
-                            <ul class="tsl dropdown-menu border-0">
-                                <li><button class="dropdown-item">Mark All Read</button></li>
-                                <li><button class="dropdown-item">Archive All</button></li>
-                            </ul>
-                        </div>
-                    </div> -->
-                    <div class="mt-3 position-relative" style="height:29px;">
-                        <button @click="openNewGroup()" style="width:40%;font-size:12px;" class="prim_btn py-1 h7 brds-1 float-start h-100">Add Group</button>
-                        <select v-model="tabFilter" style="width:59%;float:right;height:100%;padding:0px;border-radius:5px !important">
+                    <div class="mt-3 position-relative groups-toolbar">
+                        <button @click="openNewGroup()" class="prim_btn py-1 h7 brds-1 groups-add-btn">Add Group</button>
+                        <select v-model="tabFilter" class="groups-filter-select">
                             <option value="all" selected>All Groups</option>
                             <option value="my" >My Groups</option>
                         </select>
@@ -63,40 +45,49 @@
                     <div v-else-if="filteredGroupsSearch.length<1" class="mt-3 text-center">
                         <p>No Group for the filter</p>
                     </div>
-                    <div v-for="groupSingle in filteredGroupsSearch">
+                    <div v-for="groupSingle in filteredGroupsSearch" :key="groupSingle.id">
                         <GroupItem :groupInfo="groupSingle"/>
                     </div>
                 </div>
             </div>
             <div class="convo-side">
-                <div v-if="groupProps.active===null" style="overflow-y:auto;height:calc(100vh - 177px)">
+                <div v-if="groupProps.active===null" class="desktop-empty-state" style="overflow-y:auto;height:calc(100vh - 177px)">
                     <div class="d-flex justify-content-center align-items-center h-100">
-                        <div>
+                        <div class="px-3">
                             <img src="/cms-assets/images/no-message.png" alt="" class="img-fluid d-block mx-auto" style="max-height:250px">
                             <div class="mt-3 text-center">
                                 <h5 class="mb-2"><strong>Select a group to view</strong></h5>
-                                <p class="mb-0 text-muted">Stay connected with your clients and fellow team <br>members with one-to-one or group private messages</p>
+                                <p class="mb-0 text-muted">Stay connected with your clients and fellow team members with one-to-one or group private messages</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div v-else-if="groupProps.active.members===0" class="h-100">
-                    <div class="d-flex flex-column justify-content-center align-items-center h-100">
-                        <div class="text-center">
+                <div v-else-if="groupProps.active.members===0" class="h-100 d-flex flex-column">
+                    <div class="convo-head p-3 d-flex align-items-center">
+                        <button type="button" class="mobile-back-btn trans_btn me-1" @click="closeMobileConvo" aria-label="Back to groups list">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                        <p class="h7 mb-0 text-capitalize"><strong>{{groupProps.active.name}}</strong></p>
+                    </div>
+                    <div class="d-flex flex-column justify-content-center align-items-center flex-grow-1">
+                        <div class="text-center px-3">
                             <h3 class="mb-2 fw-bold">No Members Assigned Yet</h3>
                             <button class="prim_btn brds-2 fw-bold" @click="addMembers(null,groupProps.active.id)">Add Members</button>
                         </div>
                     </div>
                 </div>
-                <div v-else class="h-100">
-                    <div class="convo-head p-3 d-flex justify-content-between position-relative">
-                        <div class="d-flex pointer" @click="toggleMembersDetail()">
-                            <div class="px-2 align-self-center">
+                <div v-else class="h-100 d-flex flex-column">
+                    <div class="convo-head p-3 d-flex justify-content-between position-relative align-items-center">
+                        <div class="d-flex align-items-center pointer flex-grow-1 min-w-0" @click="toggleMembersDetail()">
+                            <button type="button" class="mobile-back-btn trans_btn me-1" @click.stop="closeMobileConvo" aria-label="Back to groups list">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div class="px-2 align-self-center flex-shrink-0">
                                 <img :src="groupProps.active.image" alt="" class="rounded-circle" style="width:40px;height:40px"/>
                             </div>
-                            <div>
+                            <div class="min-w-0">
                                 <div>
-                                    <p class="h7 mb-0 text-capitalize"><strong>{{groupProps.active.name}}</strong></p>
+                                    <p class="h7 mb-0 text-capitalize text-truncate"><strong>{{groupProps.active.name}}</strong></p>
                                 </div>
                                 <div>
                                     <p style="color: #f2a18c" class="h8 mb-0">{{groupProps.active.members}} Members</p>
@@ -104,50 +95,49 @@
                             </div>
                         </div>
                         <div tabindex="0" @focusout="memberDetail=false" v-if="memberDetail" class="shd_card p-3 members-detail">
-                            <!-- <p v-if="membersList.length===0" class="text-center">No Members</p> -->
-                            <div v-for="member in membersList" class="d-flex justify-content">
+                            <div v-for="member in membersList" :key="member.id || member.name" class="d-flex justify-content">
                                 <p class="text-capitalize px-2 py-1 m-0">{{member.name}}</p>
                             </div>
                         </div>
                     </div>
-                    <div class="convo-content">
+                    <div class="convo-content flex-grow-1">
                         <div class="d-flex flex-column justify-content-end h-100">
-                            <div id="messageDiv" style="overflow-y: auto;" class="px-4 pb-4" ref="scrollable">
-                                <MsgItem v-for="msg in groupProps.messages" :msgdet="msg"/>
+                            <div id="messageDiv" class="px-3 px-md-4 pb-4 message-scroll" ref="scrollable">
+                                <MsgItem v-for="msg in groupProps.messages" :key="msg.id" :msgdet="msg"/>
                             </div>
                         </div>
                     </div>
-                    <div class="convo-type" style="border-top:1px solid #dbdbdb">
-                        <div class="w-70" style="border-right:1px solid #dbdbdb">
+                    <div class="convo-type">
+                        <div class="convo-type-input">
                             <textarea type="text" rows="1" class="w-100"
                             @keyup.exact.enter="checkKey('send')"
                             @keyup.exact.enter.shift="checkKey('break')"
-                            placeholder="Type a message here. Shift-Enter for a new line."
+                            placeholder="Type a message..."
                             v-model="newMessage"></textarea>
                         </div>
-                        <div class="me-4 d-flex align-items-center">
-                            <button class="trans_btn position-relative">
-                                <img @click="toogleEmojiPicker" style="max-height:25px" src="/cms-assets/images/Shape.png" class="img-fluid">
+                        <div class="convo-type-actions d-flex align-items-center">
+                            <button class="trans_btn position-relative" type="button">
+                                <img @click="toogleEmojiPicker" style="max-height:25px" src="/cms-assets/images/Shape.png" class="img-fluid" alt="emoji">
                                 <EmojiPicker v-if="emojiPicker"/>
                             </button>
-                            <button @click="openImageInput()" class="trans_btn">
-                                <img style="max-height:25px" src="/cms-assets/images/image.png" class="img-fluid">
+                            <button @click="openImageInput()" class="trans_btn" type="button">
+                                <img style="max-height:25px" src="/cms-assets/images/image.png" class="img-fluid" alt="image">
                             </button>
                             <input @change="getImageFile()" type="file" accept=".jpg, .png, .jpeg" class="d-none" ref="imageFileRef">
-                            <button @click="openVideoInput()" class="trans_btn">
-                                <img style="max-height:25px" src="/cms-assets/images/video.png" class="img-fluid">
+                            <button @click="openVideoInput()" class="trans_btn" type="button">
+                                <img style="max-height:25px" src="/cms-assets/images/video.png" class="img-fluid" alt="video">
                             </button>
                             <input @change="getVideoFile()" type="file" accept=".mp4, .mkv, .mov, .m4v" class="d-none" ref="videoFileRef">
-                            <button @click="openDocInput()" class="trans_btn">
-                                <img style="max-height:25px" src="/cms-assets/images/document.png" class="img-fluid">
+                            <button @click="openDocInput()" class="trans_btn" type="button">
+                                <img style="max-height:25px" src="/cms-assets/images/document.png" class="img-fluid" alt="document">
                             </button>
                             <input @change="getDocFile()" type="file" accept=".docx,.pdf,.txt,.doc" class="d-none" ref="docFileRef">
-                            <button class="trans_btn" @click="openVoiceTargetModal()">
-                                <img style="max-height:25px" src="/cms-assets/images/audio.png" class="img-fluid">
+                            <button class="trans_btn" type="button" @click="openVoiceTargetModal()">
+                                <img style="max-height:25px" src="/cms-assets/images/audio.png" class="img-fluid" alt="audio">
                             </button>
                             <input @change="getAudioFile()" type="file" accept=".mp3,.wav,.m4a,.webm,.ogg,.aac,audio/*" class="d-none" ref="audioFileRef">
-                            <button @click="sendTextMessage()" class="trans_btn">
-                                <img style="max-height:35px" src="/cms-assets/images/send.png" class="img-fluid">
+                            <button @click="sendTextMessage()" class="trans_btn" type="button">
+                                <img style="max-height:35px" src="/cms-assets/images/send.png" class="img-fluid" alt="send">
                             </button>
                         </div>
                     </div>
@@ -388,6 +378,11 @@ export default {
                 })
             }
             this.memberDetail = !this.memberDetail;
+        },
+        closeMobileConvo() {
+            this.memberDetail = false;
+            this.emojiPicker = false;
+            this.groupProps.active = null;
         },
         openGroup(group) {
             this.$emit('activeGroupEvent', group, 1);
@@ -690,11 +685,22 @@ export default {
 };
 </script>
 <style scoped>
+.groups-page {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.min-w-0 {
+    min-width: 0;
+}
+
 textarea {
     border: none;
     padding-top: 12px;
-    padding-left: 20px;
+    padding-left: 16px;
     padding-bottom: 10px;
+    resize: none;
 }
 
 .chats-side {
@@ -704,20 +710,20 @@ textarea {
     border-right: 1px solid rgb(228, 228, 228);
     overflow: auto;
     width: 270px;
+    flex-shrink: 0;
 }
 
 .convo-side {
     width: calc(100% - 270px);
-}
-
-.none {
-    display: none;
+    min-width: 0;
+    background: #fff;
 }
 
 .msgs-box {
     border: 1px solid rgb(228, 228, 228);
     border-radius: 1rem;
     height: calc(100vh - 127px);
+    overflow: hidden;
 }
 
 .chats-head input,
@@ -729,6 +735,25 @@ textarea {
     background-color: white;
     width: 100%;
     color: gray;
+}
+
+.groups-toolbar {
+    height: 29px;
+    display: flex;
+    gap: 4px;
+}
+
+.groups-add-btn {
+    width: 40%;
+    font-size: 12px;
+    height: 100%;
+}
+
+.groups-filter-select {
+    width: 59%;
+    height: 100%;
+    padding: 0;
+    border-radius: 5px !important;
 }
 
 .chats-head input:focus,
@@ -748,6 +773,7 @@ textarea {
 
 .convo-head {
     border-bottom: 1px solid gainsboro;
+    flex-shrink: 0;
 }
 
 .convo-head img {
@@ -756,15 +782,48 @@ textarea {
     border-radius: 50%;
 }
 
+.mobile-back-btn {
+    display: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
 .convo-content {
     height: calc(100% - 125px);
+    min-height: 0;
+}
+
+.message-scroll {
+    overflow-y: auto;
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
 }
 
 .convo-type {
     display: flex !important;
     justify-content: space-between !important;
-    /*overflow-y: hidden;*/
     align-items: center;
+    border-top: 1px solid #dbdbdb;
+    flex-shrink: 0;
+    gap: 4px;
+    padding-right: 4px;
+}
+
+.convo-type-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border-right: 1px solid #dbdbdb;
+}
+
+.convo-type-actions {
+    flex: 0 0 auto;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 6px;
 }
 
 .convo-type input {
@@ -798,6 +857,7 @@ textarea {
     left: 100px;
     top: 60px;
     width: 206px;
+    max-width: calc(100vw - 48px);
     max-height: 300px;
     overflow-y: auto;
     z-index: 99;
@@ -805,5 +865,79 @@ textarea {
 
 .members-detail div {
     border-bottom: 1px solid rgb(197, 197, 197);
+}
+
+@media screen and (max-width: 991.98px) {
+    .msgs-box {
+        height: calc(100dvh - 150px);
+        min-height: 420px;
+        border-radius: 12px;
+    }
+
+    .chats-side,
+    .convo-side {
+        width: 100%;
+        border-radius: 12px;
+        border-right: none;
+    }
+
+    .msgs-box:not(.mobile-convo-open) .convo-side {
+        display: none;
+    }
+
+    .msgs-box.mobile-convo-open .chats-side {
+        display: none;
+    }
+
+    .mobile-back-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .convo-content {
+        height: auto;
+        flex: 1 1 auto;
+    }
+
+    .convo-type {
+        flex-wrap: wrap;
+    }
+
+    .convo-type-input {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #dbdbdb;
+    }
+
+    .convo-type-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .desktop-empty-state {
+        display: none !important;
+    }
+
+    .members-detail {
+        left: 16px;
+        right: 16px;
+        width: auto;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .msgs-box {
+        height: calc(100dvh - 145px);
+    }
+
+    .convo-head {
+        padding: 10px 8px !important;
+    }
+
+    .message-scroll {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
 }
 </style>
