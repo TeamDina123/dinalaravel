@@ -410,6 +410,7 @@ class ClientsController extends Controller
         ]);
         $userDetails = UserDetail::where('user_id',$id)->first();
         $currentSub = Subscription::where('id',$userDetails->subscription)->pluck('name')->first();
+        $package = \App\Support\SubscriptionAccess::packageSummary((int) $id);
         $achv = Achievement::where('user_id',$id)->get();
         foreach ($achv as $item) {
             $item->badge_name = $item->badgeName();
@@ -430,7 +431,13 @@ class ClientsController extends Controller
         $info->added_on = $user->created_at->format('D d M, Y');
         $info->setup_on = $user->created_at->format('D d M, Y'); // put questiodns here
         $info->timezone = Carbon::now()->timezone->getName();
-        $info->subscription = $currentSub;
+        $info->subscription = $package['package_label'] ?: $currentSub;
+        $info->package_label = $package['package_label'];
+        $info->package_product_id = $package['package_product_id'];
+        $info->package_tier = $package['package_tier'];
+        $info->subscription_active = $package['subscription_active'];
+        $info->can_reply = $package['can_reply'];
+        $info->can_reply_label = $package['can_reply_label'];
         $info->units = UserSetting::where('user_id',$id)->first(['weight_unit','distance_unit','body_measures']);;
         $info->meal_workflow = null;
         $info->badges = $achv;

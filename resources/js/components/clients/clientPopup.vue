@@ -1,28 +1,30 @@
 <template lang="">
     <Loader v-if="pageLoading" :loadingText="loaderText" />
     <Inform v-if="informModal" :msgTitle="modalTitle" :msgDetail="modalDetail" />
-    <div v-if="userDetails!=null" @click.self="quitComponent" class="my-popup-component" style="overflow:auto;">
-        <div class="brds-3 pb-3" style="width:80%;height:85%;background-color:white;overflow-y:auto;position:relative;">
-            <button class="trans_btn float-end" @click="quitComponent" style="right:15px;top:10px;font-size:25px">
+    <div v-if="userDetails!=null" @click.self="quitComponent" class="my-popup-component client-popup-overlay">
+        <div class="brds-3 pb-3 client-popup-panel">
+            <button class="trans_btn client-popup-close" @click="quitComponent" aria-label="Close profile">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <div class="ps-3" style="width:100%;height:60px;background-color:#EEEEEE;border-top-left-radius:15px;border-top-right-radius:15px;">
+            <div class="client-popup-tabs">
                 <button class="top-btn" :class="{ active: summary}" style="border-top-left-radius:10px;border-bottom-left-radius:10px;border-left: 1px solid #C5C5C5;" @click="showSummary">Summary</button>
                 <button class="top-btn" :class="{ active: consultation}" @click="showConsultation">Consultation</button>
                 <button v-if="logInDetails.role==='Admin'" class="top-btn" :class="{ active: attachments}" @click="showAttachments">Attachments</button>
-                <!-- <buttosn class="top-btn" :class="{ active: sales}" @click="showSales">Sales</button> -->
                 <button class="top-btn" :class="{ active: invoices}" @click="showInvoices" style="border-top-right-radius:10px;border-bottom-right-radius:10px;">Invoices</button>
             </div>
-            <div style="width:100%;min-height:100px;position:relative;">
-                <img v-if="userDetails.image" :src="userDetails.image" alt="Error" style="width:80px;height:80px;margin-top:10px;margin-left:20px;float:left;border-radius:40px;">
-                <img v-else src="/images/Group55795.png" alt="Error" style="width:80px;height:80px;margin-top:10px;margin-left:20px;float:left;border-radius:40px;">
-                <div class="float-start mt-2 ms-4">
-                    <p class="mb-0 ms-2" style="font-size:37px;">{{userDetails.full_name}}</p>
-                    <p class="mb-0 ms-3" style="font-size:14px">{{userDetails.subscription}}</p>
+            <div class="client-popup-header">
+                <img v-if="userDetails.image" :src="userDetails.image" alt="" class="client-popup-avatar">
+                <img v-else src="/images/Group55795.png" alt="" class="client-popup-avatar">
+                <div class="client-popup-identity">
+                    <p class="client-popup-name mb-1">{{userDetails.full_name}}</p>
+                    <div class="client-package-row">
+                        <span class="package-badge">{{ userDetails.package_label || userDetails.subscription || 'No package' }}</span>
+                        <span class="reply-badge" :class="{ 'can-reply': userDetails.can_reply, 'no-reply': !userDetails.can_reply }">
+                            {{ userDetails.can_reply_label || (userDetails.can_reply ? 'Can reply to messages' : 'Cannot reply to messages') }}
+                        </span>
+                    </div>
                 </div>
-                <!-- <button class="float-start brds-4 tslin" style="position:absolute;top:30px;right:90px;border:none;height:27px;width:115px;font-size:17px;background-color:transparent;">Edit</button>
-                <button class="client-dots float-start"></button> -->
-                <div v-if="summary" class="dropdown float-end">
+                <div v-if="summary" class="dropdown client-popup-menu">
                     <button class="btn client-dots" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
@@ -33,30 +35,29 @@
                     </ul>
                 </div>
             </div>
-            <div v-if="summary" class="mx-auto" style="width:95%;min-height:370px">
+            <div v-if="summary" class="mx-auto client-summary-wrap">
                 <div v-if="summary1">
-                    <div style="width:100%;min-height:150px;" class="d-flex flex-wrap justify-content-around">
-                        <div class="brds-2 tsl " style="width:32%;height:150px;">
-                            <div class="mt-2" style="width:100%;height:45px;position:relative;">
-                                <p class="float-start position-absolute m-0" style="font-size:14px;width:60%;top:5px;left:10px;">Recently earned badges:</p>
-                                <!-- <p class="float-end position-absolute m-0" style="font-size:14px;width:20%;color:#B1B0B0;cursor:pointer;top:5px;right:5px">View All</p> -->
+                    <div class="summary-stats d-flex flex-wrap justify-content-between">
+                        <div class="brds-2 tsl summary-card">
+                            <div class="mt-2 summary-card-title">
+                                <p class="m-0">Recently earned badges:</p>
                             </div>
-                            <div v-if="userDetails.badges.length!==0" class="ps-0" style="width:100%;overflow:auto;height:100px;display:flex;justify-content:center;">
-                                <div style="width:60px;text-align:center;" class="float-start ms-1" v-for="(item, index) in userDetails.badges" :key="index">
-                                    <img src="/images/Group16569.png" alt="Error" style="height:40px;width:40px;">
+                            <div v-if="userDetails.badges.length!==0" class="summary-badges">
+                                <div class="summary-badge-item" v-for="(item, index) in userDetails.badges" :key="index">
+                                    <img src="/images/Group16569.png" alt="" style="height:40px;width:40px;">
                                     <p style="font-size:7px;" class="mx-auto mb-0">{{item.badge_name}}</p>
                                 </div>
                             </div>
                             <p v-else class="ms-3" style="color:#B1B0B0;">No Badges to show</p>
                         </div>
-                        <div class="brds-2 tsl  ms-3" style="width:32%;height:150px;display:flex;justify-content:center;">
+                        <div class="brds-2 tsl summary-card summary-card-center">
                             <div class="mt-4" style="width:60px;text-align:center;">
                                 <img src="/images/Group16188.png" alt="" style="width:40px">
                                 <p style="font-size:9px;margin-bottom:5px">Total workouts</p>
                                 <p style="font-size:10px;color:#B1B0B0;">{{userDetails.totalWorkouts}}</p>
                             </div>
                         </div>
-                        <div class="brds-2 tsl  ms-3 p-2" style="width:32%;overflow-y:auto;">
+                        <div class="brds-2 tsl summary-card p-2" style="overflow-y:auto;">
                             <p v-if="clientTags.names.length<1 && !(clientTags.consultation_answers || []).length">No Tags to show</p>
                             <p v-for="(item, index) in clientTags.names" :key="index" class="px-2 float-start m-1" style="background-color:#F2A18C;border-radius:20px">{{item}}</p>
                             <div v-if="(clientTags.consultation_answers || []).length" style="clear:both;padding-top:8px;">
@@ -67,60 +68,61 @@
                                 </p>
                             </div>
                         </div>
-                        <!-- <div class="brds-2 tsl float-start ms-3" style="width:37%;height:150px;">
-                            <img src="/images/Group16361.png" alt="Error" class="m-3 float-start" style="height:120px">
-                            <div class="float-start mt-3 pt-3">
-                                <p style="font-size:29px;margin:0px;">Fitbit</p>
-                                <p style="font-size:14px;margin:0px;">Ask to Connect</p>
-                            </div>
-                        </div> -->
                     </div>
-                    <div style="width:100%;min-height:300px;padding-top:15px;display:flex;justify-content:center">
-                        <div class="brds-3 tsl float-start me-2" style="width:430px;min-height:270px;">
-                            <div class="w-80 mx-auto mt-3" style="min-height:30px;display:flex;justify-content:space-between">
-                                <p class="m-0 pt-1 p1">Email:</p>
+                    <div class="summary-info-grid">
+                        <div class="brds-3 tsl summary-info-card">
+                            <div class="info-row">
+                                <p class="m-0 p1">Email:</p>
                                 <p class="m-0 p2">{{userDetails.email}}</p>
                             </div>
-                            <div class="w-80 mx-auto mt-1" style="min-height:30px;display:flex;justify-content:space-between">
-                                <p class="m-0 pt-1 p1">Phone:</p>
+                            <div class="info-row">
+                                <p class="m-0 p1">Phone:</p>
                                 <p class="m-0 p2">{{userDetails.phone}}</p>
                             </div>
-                            <div class="w-80 mx-auto mt-1" style="min-height:30px;display:flex;justify-content:space-between">
-                                <p class="m-0 pt-1 p1">Date of birth:</p>
+                            <div class="info-row">
+                                <p class="m-0 p1">Date of birth:</p>
                                 <p class="m-0 p2">{{userDetails.dob}}</p>
                             </div>
-                            <div class="w-80 mx-auto mt-1" style="min-height:30px;display:flex;justify-content:space-between">
-                                <p class="m-0 pt-1 p1">Height:</p>
+                            <div class="info-row">
+                                <p class="m-0 p1">Height:</p>
                                 <p class="m-0 p2">{{userDetails.height}}</p>
                             </div>
-                            <div class="w-80 mx-auto mt-1" style="min-height:30px;display:flex;justify-content:space-between">
-                                <p class="m-0 pt-1 p1">Sex:</p>
+                            <div class="info-row">
+                                <p class="m-0 p1">Sex:</p>
                                 <p class="m-0 p2">{{userDetails.gender}}</p>
                             </div>
-                            <div class="w-80 mx-auto mt-1" style="min-height:30px;display:flex;justify-content:space-between">
-                                <p class="m-0 pt-1 p1">Activity level:</p>
+                            <div class="info-row">
+                                <p class="m-0 p1">Activity level:</p>
                                 <p class="m-0 p2">{{userDetails.activitylevel}}</p>
                             </div>
+                            <div class="info-row">
+                                <p class="m-0 p1">Package:</p>
+                                <p class="m-0 p2">{{userDetails.package_label || userDetails.subscription || 'No package'}}</p>
+                            </div>
+                            <div class="info-row">
+                                <p class="m-0 p1">Messaging:</p>
+                                <p class="m-0 p2">{{userDetails.can_reply_label || (userDetails.can_reply ? 'Can reply' : 'Cannot reply')}}</p>
+                            </div>
                         </div>
-                        <div class="brds-3 tsl float-start ms-2" style="width:430px;min-height:270px;">
-                            <div class="w-80 mx-auto mt-3" style="min-height:30px;display:flex;justify-content:space-between">
-                                <p class="m-0 pt-1 p1">Added on:</p>
+                        <div class="brds-3 tsl summary-info-card">
+                            <div class="info-row">
+                                <p class="m-0 p1">Added on:</p>
                                 <p class="m-0 p2">{{userDetails.added_on}}</p>
                             </div>
-                            <div class="w-80 mx-auto mt-1" style="min-height:30px;display:flex;justify-content:space-between">
-                                <p class="m-0 pt-1 p1">Setup account on:</p>
+                            <div class="info-row">
+                                <p class="m-0 p1">Setup account on:</p>
                                 <p class="m-0 p2">{{userDetails.setup_on}}</p>
                             </div>
-                            <div class="w-80 mx-auto mt-1" style="min-height:30px;display:flex;justify-content:space-between">
-                                <p class="m-0 pt-1 p1">Timezone:</p>
+                            <div class="info-row">
+                                <p class="m-0 p1">Timezone:</p>
                                 <p class="m-0 p2">{{userDetails.timezone}}</p>
                             </div>
-                            <div v-if="userDetails.units" class="w-80 mx-auto mt-1" style="min-height:30px;display:flex;justify-content:space-between">
-                                <p class="m-0 pt-1 p1">Units:</p>
-                                <p class="m-0 p2">Weight ({{userDetails.units.weight_unit}});Distance ({{userDetails.units.distance_unit}});Body Stats ({{userDetails.units.body_measures}})</p>
+                            <div v-if="userDetails.units" class="info-row">
+                                <p class="m-0 p1">Units:</p>
+                                <p class="m-0 p2">Weight ({{userDetails.units.weight_unit}}); Distance ({{userDetails.units.distance_unit}}); Body Stats ({{userDetails.units.body_measures}})</p>
                             </div>
-                            <div class="w-80 mx-auto mt-1" style="min-height:30px;display:flex;justify-content:space-between;margin-bottom:10px">
-                                <p class="m-0 pt-1 p1">Meal workflow:</p>
+                            <div class="info-row" style="margin-bottom:10px">
+                                <p class="m-0 p1">Meal workflow:</p>
                                 <p class="m-0 p2">{{userDetails.meal_workflow}}</p>
                             </div>
                         </div>
@@ -1134,20 +1136,194 @@ export default {
     right: 19px;
 }
 
+.client-popup-overlay {
+    overflow: auto;
+    padding: 12px;
+    align-items: flex-start;
+}
+
+.client-popup-panel {
+    width: min(920px, 96vw);
+    height: min(85vh, 900px);
+    max-height: 92vh;
+    background-color: white;
+    overflow-y: auto;
+    position: relative;
+    margin: auto;
+}
+
+.client-popup-close {
+    position: sticky;
+    top: 8px;
+    float: right;
+    z-index: 5;
+    right: 10px;
+    font-size: 22px;
+}
+
+.client-popup-tabs {
+    width: 100%;
+    min-height: 56px;
+    background-color: #EEEEEE;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    padding: 10px 12px;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 0;
+}
+
+.client-popup-header {
+    width: 100%;
+    min-height: 100px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px 8px;
+    position: relative;
+}
+
+.client-popup-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+.client-popup-identity {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-right: 48px;
+}
+
+.client-popup-name {
+    font-size: clamp(20px, 5vw, 32px);
+    line-height: 1.15;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.client-package-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.package-badge,
+.reply-badge {
+    display: inline-block;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 4px 10px;
+}
+
+.package-badge {
+    background: #FCEAE5;
+    color: #8A3B2A;
+}
+
+.reply-badge.can-reply {
+    background: #E5F8EC;
+    color: #147333;
+}
+
+.reply-badge.no-reply {
+    background: #F8E5E5;
+    color: #A11B1B;
+}
+
+.client-popup-menu {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+}
+
+.client-summary-wrap {
+    width: 95%;
+    min-height: 370px;
+    padding-bottom: 16px;
+}
+
+.summary-stats {
+    width: 100%;
+    gap: 10px;
+}
+
+.summary-card {
+    width: calc(33.33% - 10px);
+    min-height: 150px;
+}
+
+.summary-card-center {
+    display: flex;
+    justify-content: center;
+}
+
+.summary-card-title p {
+    font-size: 14px;
+    padding: 0 10px;
+}
+
+.summary-badges {
+    width: 100%;
+    overflow: auto;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+}
+
+.summary-badge-item {
+    width: 60px;
+    text-align: center;
+}
+
+.summary-info-grid {
+    width: 100%;
+    min-height: 300px;
+    padding-top: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.summary-info-card {
+    width: min(430px, 100%);
+    min-height: 270px;
+    padding-bottom: 12px;
+}
+
+.info-row {
+    width: 90%;
+    margin: 8px auto 0;
+    min-height: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
 .p1 {
-    font-size: 15px;
-    float: left;
-    width: 130px;
+    font-size: 14px;
+    width: 120px;
+    flex: 0 0 auto;
+    padding-top: 6px;
 }
 
 .p2 {
     font-size: 12px;
-    float: right;
-    width: 190px;
+    flex: 1 1 auto;
+    min-width: 0;
     box-shadow: 0 0 10px 0px #F2A18C inset;
     border-radius: 15px;
-    padding: 6px 0px 5px 10px;
-    color: #B1B0B0
+    padding: 6px 10px;
+    color: #B1B0B0;
+    overflow-wrap: anywhere;
 }
 
 .add-btn {
@@ -1403,6 +1579,14 @@ export default {
     .habit-assignment-box {
         width: 100%;
     }
+
+    .summary-card {
+        width: calc(50% - 8px);
+    }
+
+    .summary-card:last-child {
+        width: 100%;
+    }
 }
 
 @media (max-width: 575.98px) {
@@ -1427,6 +1611,55 @@ export default {
     .routine-action {
         flex: 0 0 auto;
         text-align: left;
+    }
+
+    .client-popup-panel {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0 !important;
+    }
+
+    .client-popup-header {
+        flex-wrap: wrap;
+        padding: 10px 12px;
+    }
+
+    .client-popup-identity {
+        padding-right: 0;
+        width: calc(100% - 84px);
+    }
+
+    .summary-card {
+        width: 100%;
+        min-height: 120px;
+    }
+
+    .summary-info-card {
+        width: 100%;
+        min-height: 0;
+    }
+
+    .info-row {
+        flex-direction: column;
+        gap: 4px;
+        width: 92%;
+    }
+
+    .p1 {
+        width: auto;
+        padding-top: 0;
+        font-weight: 600;
+        color: #343434;
+    }
+
+    .p2 {
+        width: 100%;
+    }
+
+    .client-summary-wrap {
+        width: 100%;
+        padding: 0 8px 20px;
     }
 }
 </style>

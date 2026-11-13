@@ -60,7 +60,13 @@ class ChatsController extends Controller
         $created = Chat::find($chat->id);
         $created->user_name = $created->userName();
         $created->image = $created->userImage();
-        $created->sub = $created->userSub();
+        $package = \App\Support\SubscriptionAccess::packageSummary((int) $created->user_id);
+        $created->sub = $package['package_label'] ?: $created->userSub();
+        $created->package_label = $package['package_label'];
+        $created->package_product_id = $package['package_product_id'];
+        $created->can_reply = $package['can_reply'];
+        $created->can_reply_label = $package['can_reply_label'];
+        $created->subscription_active = $package['subscription_active'];
         $created->unread = 0;
         return response()->json([
             'status' => true,
@@ -100,7 +106,13 @@ class ChatsController extends Controller
             $chat->last_type = is_null($lastMessage)?'-':$lastMessage->msg_type;
             $chat->user_name = $chat->userName();
             $chat->image = $chat->userImage();
-            $chat->sub = $chat->userSub();
+            $package = \App\Support\SubscriptionAccess::packageSummary((int) $chat->user_id);
+            $chat->sub = $package['package_label'] ?: $chat->userSub();
+            $chat->package_label = $package['package_label'];
+            $chat->package_product_id = $package['package_product_id'];
+            $chat->can_reply = $package['can_reply'];
+            $chat->can_reply_label = $package['can_reply_label'];
+            $chat->subscription_active = $package['subscription_active'];
             $chat->unread = $chat->unreadMsgs('user');
             
             // Add user tags to chat (from consultation form answers)

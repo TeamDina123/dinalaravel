@@ -10,6 +10,12 @@
                         <strong class="text-capitalize">{{chatData.user_name}}</strong>
                         <span class="ms-2 badge bg-danger rounded-circle" v-if="chatData.unread!==0&&badgeShow==true">{{chatData.unread}}</span>
                     </p>
+                    <p class="h8 mb-0 package-line text-truncate">
+                        {{ chatData.package_label || chatData.sub || 'No package' }}
+                        <span :class="chatData.can_reply ? 'reply-yes' : 'reply-no'">
+                            · {{ chatData.can_reply ? 'Can reply' : 'Cannot reply' }}
+                        </span>
+                    </p>
                     <p v-if="chatData.last_type==='text'" class="h8 mb-0 text-muted text-truncate">{{chatData.last_message}}</p>
                     <p v-else class="h8 mb-0 text-muted text-capitalize text-truncate">- {{chatData.last_type}}</p>
                 </div>
@@ -71,5 +77,18 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.package-line {
+    color: #8A3B2A;
+    font-size: 11px;
+}
+
+.reply-yes {
+    color: #147333;
+}
+
+.reply-no {
+    color: #A11B1B;
 }
 </style>

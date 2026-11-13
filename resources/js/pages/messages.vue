@@ -75,9 +75,12 @@
                                 <div>
                                     <button type="button" class="trans_btn h7 mb-0 p-0 text-capitalize text-truncate d-inline-block" style="max-width:100%" @click="openClientProfile"><strong>{{chatProps.active.user_name}}</strong></button>
                                 </div>
-                                <div class="position-relative">
-                                    <p style="color: #f2a18c" class="h8 mb-0 float-start">{{chatProps.active.sub}}</p>
-                                    <p @click="tagsDiv=!tagsDiv" style="color: #f2a18c" class="h8 mb-0 ms-3 float-start position-relative">View Tags</p>
+                                <div class="convo-meta">
+                                    <span class="package-chip">{{ chatProps.active.package_label || chatProps.active.sub || 'No package' }}</span>
+                                    <span class="reply-chip" :class="{ 'can-reply': chatProps.active.can_reply, 'no-reply': !chatProps.active.can_reply }">
+                                        {{ chatProps.active.can_reply_label || (chatProps.active.can_reply ? 'Can reply' : 'Cannot reply') }}
+                                    </span>
+                                    <button type="button" class="trans_btn h8 mb-0 p-0 ms-1" style="color:#f2a18c" @click="tagsDiv=!tagsDiv">View Tags</button>
                                     <div v-if="tagsDiv" class="tsl brds-2 position-absolute p-2 tags-dropdown">
                                         <p v-if="clientsTags.names.length>0" v-for="(item, index) in clientsTags.names" :key="index" class="px-2 float-start m-1" style="background-color:#F2A18C;border-radius:20px;font-size:13px;">{{item}}</p>
                                         <p v-else class="mb-0">No tags assigned</p>
@@ -615,6 +618,38 @@ textarea {
 .convo-head {
     border-bottom: 1px solid gainsboro;
     flex-shrink: 0;
+}
+
+.convo-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+}
+
+.package-chip,
+.reply-chip {
+    display: inline-block;
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 1.2;
+    padding: 3px 8px;
+}
+
+.package-chip {
+    background: #FCEAE5;
+    color: #8A3B2A;
+}
+
+.reply-chip.can-reply {
+    background: #E5F8EC;
+    color: #147333;
+}
+
+.reply-chip.no-reply {
+    background: #F8E5E5;
+    color: #A11B1B;
 }
 
 .convo-head img {
